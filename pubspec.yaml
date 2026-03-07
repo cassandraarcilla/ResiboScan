@@ -7,6 +7,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_svg: ^2.0.10+1
 
 flutter:
   uses-material-design: true
@@ -14,3 +15,13 @@ flutter:
     - assets/images/scanner.png
     - assets/images/folder.png
     - assets/images/expense.png
+    - assets/images/1.svg
+    - assets/images/2.svg
+    - assets/images/3.svg
+    - assets/images/4.svg
+    - assets/images/5.svg
+    - assets/images/6.svg
+    - assets/images/7.svg
+    - assets/images/8.svg
+    - assets/images/9.svg
+    - assets/images/10.svg

@@ -1,6 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/receipt_model.dart';
-import '../utils/constants.dart';
+
+// ── Vintage Hues Palette ─────────────────────────────────────────────────────
+const _cerulean    = Color(0xFF2D728F);
+const _cyan        = Color(0xFF3B8EA5);
+const _vanilla     = Color(0xFFF5EE9E);
+const _sandy       = Color(0xFFF49E4C);
+const _brick       = Color(0xFFAB3428);
+const _cream       = Color(0xFFFDF8EC);
+const _white       = Color(0xFFFFFFFF);
+const _ink         = Color(0xFF0F2027);
+const _inkMid      = Color(0xFF2C4A55);
+const _inkLight    = Color(0xFF7A9BAA);
+const _vanillaSoft = Color(0xFFFAF3C0);
 
 class ReceiptDetailScreen extends StatelessWidget {
   final Receipt receipt;
@@ -16,137 +29,556 @@ class ReceiptDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final days = receipt.daysToWarranty;
+    final topPad = MediaQuery.of(context).padding.top;
+    final days   = receipt.daysToWarranty;
 
-    return SingleChildScrollView(
-      child: Column(children: [
-        // Header
-        Container(
-          color: cPrimary,
-          padding: const EdgeInsets.fromLTRB(20, 56, 20, 28),
-          child: Row(children: [
-            GestureDetector(
-              onTap: onBack,
+    final bool hasWarranty      = receipt.warranty != null;
+    final bool warrantyExpired  = hasWarranty && (days != null && days <= 0);
+    final bool warrantyCritical = hasWarranty && days != null && days > 0 && days <= 30;
+
+    return Scaffold(
+      backgroundColor: _cream,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // ── HERO HEADER ──────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, topPad + 14, 16, 0),
               child: Container(
-                width: 38, height: 38,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: [0.0, 0.5, 1.0],
+                    colors: [Color(0xFF1A546B), _cerulean, _cyan],
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _cerulean.withOpacity(0.38),
+                      blurRadius: 36,
+                      offset: const Offset(0, 16),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.arrow_back,
-                    color: Colors.white, size: 18),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Receipt Detail',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7), fontSize: 12)),
-              Text(receipt.store,
-                style: const TextStyle(
-                  color: Colors.white, fontSize: 18,
-                  fontWeight: FontWeight.w800)),
-            ]),
-          ]),
-        ),
-
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 90),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image / emoji box
-              Container(
-                height: 200, width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F0F0),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: cBorder),
-                ),
-                alignment: Alignment.center,
-                child: Text(receipt.image,
-                  style: const TextStyle(fontSize: 72)),
-              ),
-              const SizedBox(height: 20),
-
-              // Info rows
-              for (final row in [
-                ['Store',    receipt.store],
-                ['Amount',   receipt.formattedAmount],
-                ['Date',     receipt.formattedDate],
-                ['Category', receipt.category],
-                ['Folder',   receipt.folder],
-                ['Notes',    receipt.notes.isEmpty ? '—' : receipt.notes],
-                if (receipt.warranty != null)
-                  ['Warranty',
-                    receipt.warranty!.split('T')[0] +
-                    (days != null && days > 0
-                        ? ' (${days}d left)' : ' (Expired)')],
-              ])
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: cBorder))),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: Stack(
                     children: [
-                      Text(row[0], style: const TextStyle(
-                          fontSize: 13, color: cSub)),
-                      Text(row[1], style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600,
-                          color: cText)),
+                      Positioned(
+                        top: -60, right: -40,
+                        child: Container(
+                          width: 200, height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.055),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              GestureDetector(
+                                onTap: onBack,
+                                child: Container(
+                                  width: 40, height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.16),
+                                    borderRadius: BorderRadius.circular(13),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.24),
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: _white, size: 16),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Receipt Detail',
+                                      style: TextStyle(
+                                        color: _vanilla.withOpacity(0.72),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      )),
+                                    const SizedBox(height: 2),
+                                    Text(receipt.store,
+                                      style: const TextStyle(
+                                        color: _white, fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        fontFamily: 'Georgia',
+                                        letterSpacing: -0.4,
+                                      ),
+                                      overflow: TextOverflow.ellipsis),
+                                  ],
+                                ),
+                              ),
+                            ]),
+                            const SizedBox(height: 18),
+                            Row(children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Amount',
+                                    style: TextStyle(
+                                      color: _vanilla.withOpacity(0.55),
+                                      fontSize: 10.5)),
+                                  const SizedBox(height: 3),
+                                  Text(receipt.formattedAmount,
+                                    style: const TextStyle(
+                                      fontFamily: 'Georgia',
+                                      color: _vanilla, fontSize: 30,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.8, height: 1.0)),
+                                ],
+                              ),
+                              const Spacer(),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  // Category pill — text only
+                                  _HeaderPill(
+                                    label: receipt.category,
+                                    bgColor: Colors.white.withOpacity(0.14),
+                                    textColor: _vanilla,
+                                  ),
+                                  const SizedBox(height: 5),
+                                  // Folder pill — real icon replaces 📁
+                                  _HeaderPillWithIcon(
+                                    icon: Icons.folder_rounded,
+                                    label: receipt.folder,
+                                    bgColor: Colors.white.withOpacity(0.10),
+                                    textColor: _vanilla.withOpacity(0.75),
+                                  ),
+                                ],
+                              ),
+                            ]),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              const SizedBox(height: 24),
+              ),
+            ),
+          ),
 
-              // Action buttons
-              Row(children: [
-                Expanded(child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.cloud_upload_outlined,
-                      size: 16, color: Colors.white),
-                  label: const Text('Backup',
-                    style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: cPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14))),
-                )),
-                const SizedBox(width: 10),
-                Expanded(child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.download_outlined,
-                      size: 16, color: Colors.white),
-                  label: const Text('Export',
-                    style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: cAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14))),
-                )),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () => onDelete(receipt.id),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFEE2E2),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14))),
-                  child: const Icon(Icons.delete_outline,
-                      color: cDanger, size: 16),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 22, 16, 110),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+
+                // ── RECEIPT SVG IMAGE ────────────────────────────────
+                Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: _vanillaSoft,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: _vanilla.withOpacity(0.5), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _sandy.withOpacity(0.10),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ClipOval(
+                        child: SvgPicture.asset(
+                          receipt.image,
+                          width : 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          placeholderBuilder: (_) => Container(
+                            width: 100, height: 100,
+                            decoration: const BoxDecoration(
+                              color: Color(0x1A7A9BAA),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 36, color: Color(0x807A9BAA)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _sandy.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          receipt.formattedDate,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _inkMid,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+
+                const SizedBox(height: 20),
+
+                // ── WARRANTY BANNER ──────────────────────────────────
+                if (hasWarranty) ...[
+                  _WarrantyBanner(
+                    warrantyDate: receipt.warranty!.split('T')[0],
+                    days        : days,
+                    isExpired   : warrantyExpired,
+                    isCritical  : warrantyCritical,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // ── DETAILS CARD ─────────────────────────────────────
+                Container(
+                  decoration: BoxDecoration(
+                    color: _white,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: _cerulean.withOpacity(0.10), width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _cerulean.withOpacity(0.06),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 4),
+                        child: Row(children: [
+                          Container(
+                            width: 4, height: 18,
+                            margin: const EdgeInsets.only(right: 10),
+                            decoration: BoxDecoration(
+                              color: _sandy,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const Text('Receipt Details',
+                            style: TextStyle(
+                              fontFamily: 'Georgia', fontSize: 15,
+                              fontWeight: FontWeight.w700, color: _ink)),
+                        ]),
+                      ),
+                      const SizedBox(height: 4),
+                      _DetailRow(label: 'Store',    value: receipt.store),
+                      _DetailRow(label: 'Amount',   value: receipt.formattedAmount),
+                      _DetailRow(label: 'Date',     value: receipt.formattedDate),
+                      _DetailRow(label: 'Category', value: receipt.category),
+                      _DetailRow(label: 'Folder',   value: receipt.folder),
+                      _DetailRow(
+                        label: 'Notes',
+                        value: receipt.notes.isEmpty ? '—' : receipt.notes,
+                        isLast: !hasWarranty,
+                      ),
+                      if (hasWarranty)
+                        _DetailRow(
+                          label: 'Warranty',
+                          value: receipt.warranty!.split('T')[0] +
+                              (days != null && days > 0
+                                  ? ' (${days}d left)'
+                                  : ' (Expired)'),
+                          isLast: true,
+                          valueColor: warrantyExpired
+                              ? _inkLight
+                              : warrantyCritical ? _brick : _cerulean,
+                        ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ── ACTION BUTTONS ────────────────────────────────────
+                Row(children: [
+                  Expanded(
+                    child: _ActionButton(
+                      icon : Icons.cloud_upload_outlined,
+                      label: 'Backup',
+                      color: _cerulean,
+                      onTap: () {},
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ActionButton(
+                      icon : Icons.download_outlined,
+                      label: 'Export',
+                      color: _sandy,
+                      onTap: () {},
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _DeleteButton(onTap: () => onDelete(receipt.id)),
+                ]),
               ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Text-only pill
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeaderPill extends StatelessWidget {
+  final String label;
+  final Color bgColor, textColor;
+  const _HeaderPill({
+    required this.label,
+    required this.bgColor,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.18), width: 1),
+      ),
+      child: Text(label, style: TextStyle(
+        fontSize: 11.5, fontWeight: FontWeight.w600, color: textColor)),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Icon + text pill — replaces the 📁 folder emoji pill
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeaderPillWithIcon extends StatelessWidget {
+  final IconData icon;
+  final String   label;
+  final Color    bgColor, textColor;
+  const _HeaderPillWithIcon({
+    required this.icon,
+    required this.label,
+    required this.bgColor,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.18), width: 1),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 12, color: textColor),
+        const SizedBox(width: 5),
+        Text(label, style: TextStyle(
+          fontSize: 11.5, fontWeight: FontWeight.w600, color: textColor)),
+      ]),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Warranty banner — real icons replace ⚠️ 🔴 ✅
+// ─────────────────────────────────────────────────────────────────────────────
+class _WarrantyBanner extends StatelessWidget {
+  final String warrantyDate;
+  final int?   days;
+  final bool   isExpired, isCritical;
+  const _WarrantyBanner({
+    required this.warrantyDate,
+    required this.days,
+    required this.isExpired,
+    required this.isCritical,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color    accentColor = isExpired
+        ? _inkLight
+        : isCritical ? _brick : _cerulean;
+
+    final IconData icon = isExpired
+        ? Icons.warning_rounded
+        : isCritical
+            ? Icons.circle          // red dot = critical
+            : Icons.check_circle_rounded; // green check = healthy
+
+    final String title = isExpired
+        ? 'Warranty Expired'
+        : isCritical
+            ? 'Expiring in $days days!'
+            : 'Active Warranty · $days days remaining';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accentColor.withOpacity(0.25), width: 1.5),
+      ),
+      child: Row(children: [
+        Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Icon(icon, color: accentColor, size: 20),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: accentColor,
+              )),
+              Text('Expires: $warrantyDate', style: TextStyle(
+                fontSize: 11.5,
+                color: accentColor.withOpacity(0.70),
+              )),
             ],
           ),
         ),
       ]),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+class _DetailRow extends StatelessWidget {
+  final String label, value;
+  final bool   isLast;
+  final Color? valueColor;
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.isLast  = false,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+      decoration: BoxDecoration(
+        border: isLast ? null : Border(
+          bottom: BorderSide(
+            color: _cerulean.withOpacity(0.07), width: 1)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(
+            fontSize: 13, color: _inkLight)),
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: valueColor ?? _inkMid,
+              )),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+class _ActionButton extends StatelessWidget {
+  final IconData     icon;
+  final String       label;
+  final Color        color;
+  final VoidCallback onTap;
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(
+            color: color.withOpacity(0.30),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          )],
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon, color: _white, size: 16),
+          const SizedBox(width: 6),
+          Text(label, style: const TextStyle(
+            color: _white,
+            fontWeight: FontWeight.w700,
+            fontSize: 13.5,
+          )),
+        ]),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+class _DeleteButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _DeleteButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        decoration: BoxDecoration(
+          color: _brick.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _brick.withOpacity(0.22), width: 1.5),
+        ),
+        child: const Icon(
+          Icons.delete_outline_rounded, color: _brick, size: 20),
+      ),
     );
   }
 }

@@ -30,12 +30,23 @@ const Map<String, Color> catColors = {
   'Others'       : Color(0xFFCDB4DB),
 };
 
-// Seed receipts
+// Category icons (Material Icons, black)
+const Map<String, IconData> catIcons = {
+  'All'          : Icons.grid_view_rounded,
+  'Groceries'    : Icons.shopping_cart_rounded,
+  'Food & Dining': Icons.restaurant_rounded,
+  'Electronics'  : Icons.devices_rounded,
+  'Utilities'    : Icons.bolt_rounded,
+  'Education'    : Icons.menu_book_rounded,
+  'Others'       : Icons.category_rounded,
+};
+
+// Seed receipts — image now points to SVG assets
 final List<Map<String, dynamic>> seedReceipts = [
-  { 'id': 1, 'store': 'SM Supermarket',     'amount': 1250.75, 'date': '2026-02-28', 'category': 'Groceries',     'warranty': null,         'image': '🛒', 'folder': 'Personal', 'notes': 'Weekly groceries' },
-  { 'id': 2, 'store': 'Jollibee',           'amount': 320.00,  'date': '2026-03-01', 'category': 'Food & Dining', 'warranty': null,         'image': '🍔', 'folder': 'Personal', 'notes': 'Family meal' },
-  { 'id': 3, 'store': 'Samsung Service',    'amount': 4500.00, 'date': '2026-01-15', 'category': 'Electronics',   'warranty': '2027-01-15', 'image': '📱', 'folder': 'Work',     'notes': 'Phone repair' },
-  { 'id': 4, 'store': 'Meralco',            'amount': 2100.00, 'date': '2026-03-05', 'category': 'Utilities',     'warranty': null,         'image': '💡', 'folder': 'Personal', 'notes': 'Electric bill' },
-  { 'id': 5, 'store': 'National Bookstore', 'amount': 875.50,  'date': '2026-02-20', 'category': 'Education',     'warranty': null,         'image': '📚', 'folder': 'Work',     'notes': 'Office supplies' },
-  { 'id': 6, 'store': 'Lazada',             'amount': 3200.00, 'date': '2026-02-10', 'category': 'Electronics',   'warranty': '2027-02-10', 'image': '💻', 'folder': 'Personal', 'notes': 'Keyboard' },
+  { 'id': 1, 'store': 'SM Supermarket',     'amount': 1250.75, 'date': '2026-02-28', 'category': 'Groceries',     'warranty': null,         'image': 'assets/images/1.svg', 'folder': 'Personal', 'notes': 'Weekly groceries' },
+  { 'id': 2, 'store': 'Jollibee',           'amount': 320.00,  'date': '2026-03-01', 'category': 'Food & Dining', 'warranty': null,         'image': 'assets/images/2.svg', 'folder': 'Personal', 'notes': 'Family meal' },
+  { 'id': 3, 'store': 'Samsung Service',    'amount': 4500.00, 'date': '2026-01-15', 'category': 'Electronics',   'warranty': '2027-01-15', 'image': 'assets/images/3.svg', 'folder': 'Work',     'notes': 'Phone repair' },
+  { 'id': 4, 'store': 'Meralco',            'amount': 2100.00, 'date': '2026-03-05', 'category': 'Utilities',     'warranty': null,         'image': 'assets/images/4.svg', 'folder': 'Personal', 'notes': 'Electric bill' },
+  { 'id': 5, 'store': 'National Bookstore', 'amount': 875.50,  'date': '2026-02-20', 'category': 'Education',     'warranty': null,         'image': 'assets/images/5.svg', 'folder': 'Work',     'notes': 'Office supplies' },
+  { 'id': 6, 'store': 'Lazada',             'amount': 3200.00, 'date': '2026-02-10', 'category': 'Electronics',   'warranty': '2027-02-10', 'image': 'assets/images/3.svg', 'folder': 'Personal', 'notes': 'Keyboard' },
 ];
