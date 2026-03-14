@@ -12,16 +12,4 @@ dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/scanner.png
-    - assets/images/folder.png
-    - assets/images/expense.png
-    - assets/images/1.svg
-    - assets/images/2.svg
-    - assets/images/3.svg
-    - assets/images/4.svg
-    - assets/images/5.svg
-    - assets/images/6.svg
-    - assets/images/7.svg
-    - assets/images/8.svg
-    - assets/images/9.svg
-    - assets/images/10.svg
+    - assets/images/
