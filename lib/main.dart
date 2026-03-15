@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'utils/constants.dart';
 import 'models/receipt_model.dart';
 import 'routes/app_routes.dart';
@@ -18,8 +19,15 @@ const _sandy    = Color(0xFFF49E4C);
 const _cream    = Color(0xFFFDF8EC);
 const _white    = Color(0xFFFFFFFF);
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: 'https://mjfjolyjgcwpwptkjune.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmpvbHlqZ2N3cHdwdGtqdW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1Njk1MTcsImV4cCI6MjA4OTE0NTUxN30.saK0cd-oXjamdw1PeOJ6eDcZxyYpHnF93t4rqcM9kXA',
+  );
+
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
