@@ -8,6 +8,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.10+1
+  http: ^1.2.1
 
 flutter:
   uses-material-design: true

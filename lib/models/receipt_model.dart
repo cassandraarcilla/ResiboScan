@@ -21,15 +21,11 @@ class Receipt {
     required this.notes,
   });
 
-  // ── Safe date parser ──────────────────────────────────────────────────────
-  // Handles both "2026-01-25" (ISO) and "January 25, 2026" (legacy seed data)
   static DateTime? _parseDate(String? raw) {
     if (raw == null || raw.isEmpty) return null;
-    // Try ISO first (the normal path)
     try {
       return DateTime.parse(raw.split('T')[0]);
     } catch (_) {}
-    // Fallback: parse "Month DD, YYYY"
     try {
       const months = {
         'january': 1,  'february': 2,  'march': 3,     'april': 4,
@@ -45,7 +41,6 @@ class Receipt {
     return null;
   }
 
-  // ── Warranty ──────────────────────────────────────────────────────────────
   int? get daysToWarranty {
     if (warranty == null) return null;
     final exp = _parseDate(warranty);
@@ -53,7 +48,6 @@ class Receipt {
     return exp.difference(DateTime.now()).inDays;
   }
 
-  // ── Formatting ────────────────────────────────────────────────────────────
   String get formattedAmount =>
       '₱${amount.toStringAsFixed(2).replaceAllMapped(
         RegExp(r'(\d)(?=(\d{3})+\.)'),
@@ -62,7 +56,7 @@ class Receipt {
 
   String get formattedDate {
     final d = _parseDate(date);
-    if (d == null) return date; // fallback: show raw string
+    if (d == null) return date;
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -70,7 +64,6 @@ class Receipt {
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 
-  // ── Serialisation ─────────────────────────────────────────────────────────
   factory Receipt.fromMap(Map<String, dynamic> m) => Receipt(
     id       : m['id'],
     store    : m['store'],
@@ -81,5 +74,20 @@ class Receipt {
     image    : m['image'],
     folder   : m['folder'],
     notes    : m['notes'] ?? '',
+  );
+
+  // ── fromJson — Milestone 3 ────────────────────────────────────────────────
+  factory Receipt.fromJson(Map<String, dynamic> json) => Receipt(
+    id       : json['id'] is int
+                 ? json['id']
+                 : int.tryParse(json['id'].toString()) ?? 0,
+    store    : json['store']    ?? '',
+    amount   : (json['amount'] as num?)?.toDouble() ?? 0,
+    date     : json['date']     ?? '',
+    category : json['category'] ?? 'Others',
+    warranty : json['warranty'],
+    image    : json['image']    ?? 'assets/images/8.svg',
+    folder   : json['folder']   ?? 'Personal',
+    notes    : json['notes']    ?? '',
   );
 }
