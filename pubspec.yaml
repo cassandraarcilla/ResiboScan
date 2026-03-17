@@ -8,7 +8,11 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.10+1
+<<<<<<< HEAD
   http: ^1.2.1
+=======
+  supabase_flutter: ^2.6.0
+>>>>>>> 0ae30fb06a1a277ee0f44ca15988cd91c0e68f65
 
 flutter:
   uses-material-design: true
