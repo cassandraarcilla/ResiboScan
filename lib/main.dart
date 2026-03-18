@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'models/exchange_rate_model.dart';
+import 'services/api_service.dart';
 import 'utils/constants.dart';
 import 'models/receipt_model.dart';
 import 'routes/app_routes.dart';
@@ -21,12 +22,6 @@ const _white    = Color(0xFFFFFFFF);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Supabase
-  await Supabase.initialize(
-    url: 'https://mjfjolyjgcwpwptkjune.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qZmpvbHlqZ2N3cHdwdGtqdW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1Njk1MTcsImV4cCI6MjA4OTE0NTUxN30.saK0cd-oXjamdw1PeOJ6eDcZxyYpHnF93t4rqcM9kXA',
-  );
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -293,6 +288,11 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   int _tab = 0;
   List<Receipt> _receipts = seedReceipts.map(Receipt.fromMap).toList();
 
+  // ── Exchange-rate state (fetched via http + JSON parsing) ────────────────
+  ExchangeRate? _exchangeRate;
+  bool          _rateLoading = true;
+  String?       _rateError;
+
   late final AnimationController _tabFadeCtrl;
   late final Animation<double>   _tabFadeAnim;
 
@@ -304,6 +304,23 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       ..value = 1.0;
     _tabFadeAnim =
         CurvedAnimation(parent: _tabFadeCtrl, curve: Curves.easeOut);
+
+    // Fetch live currency rates using the http package
+    _loadExchangeRates();
+  }
+
+  /// Calls [ApiService.fetchExchangeRates], which uses the `http` package
+  /// to GET the JSON endpoint, then parses the response into [ExchangeRate].
+  Future<void> _loadExchangeRates() async {
+    setState(() { _rateLoading = true; _rateError = null; });
+    try {
+      final rate = await ApiService.fetchExchangeRates();
+      if (mounted) setState(() { _exchangeRate = rate; _rateLoading = false; });
+    } on ApiException catch (e) {
+      if (mounted) setState(() { _rateError = e.message; _rateLoading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _rateError = e.toString(); _rateLoading = false; });
+    }
   }
 
   @override
@@ -350,7 +367,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
     final screens = [
       HomeScreen(
-          receipts: _receipts, onView: _viewReceipt, onDelete: _delReceipt),
+          receipts      : _receipts,
+          onView        : _viewReceipt,
+          onDelete      : _delReceipt,
+          exchangeRate  : _exchangeRate,
+          rateLoading   : _rateLoading,
+          rateError     : _rateError,
+          onRefreshRate : _loadExchangeRates),
       FoldersScreen(
           receipts: _receipts, onView: _viewReceipt, onDelete: _delReceipt),
       ExpensesScreen(receipts: _receipts),

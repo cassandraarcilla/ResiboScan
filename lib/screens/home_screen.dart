@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/receipt_model.dart';
+import '../models/exchange_rate_model.dart';
 import '../utils/constants.dart';
 import '../widgets/receipt_card.dart';
 
@@ -22,11 +23,21 @@ class HomeScreen extends StatefulWidget {
   final ValueChanged<Receipt> onView;
   final ValueChanged<int> onDelete;
 
+  // ── Live exchange-rate data (fetched via http) ───────────────────────────
+  final ExchangeRate? exchangeRate;
+  final bool          rateLoading;
+  final String?       rateError;
+  final VoidCallback? onRefreshRate;
+
   const HomeScreen({
     super.key,
     required this.receipts,
     required this.onView,
     required this.onDelete,
+    this.exchangeRate,
+    this.rateLoading  = false,
+    this.rateError,
+    this.onRefreshRate,
   });
 
   @override
@@ -114,6 +125,16 @@ class _HomeScreenState extends State<HomeScreen>
                 receipts:     widget.receipts,
                 thisMonth:    _thisMonth,
                 warningCount: _warningCount,
+              ),
+            ),
+
+            // ── LIVE EXCHANGE RATE BANNER (http + JSON) ───────────────
+            SliverToBoxAdapter(
+              child: _ExchangeRateBanner(
+                rate      : widget.exchangeRate,
+                loading   : widget.rateLoading,
+                error     : widget.rateError,
+                onRefresh : widget.onRefreshRate,
               ),
             ),
 
@@ -672,6 +693,232 @@ class _EmptyState extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13, fontWeight: FontWeight.w700,
                 color: _white, letterSpacing: 0.2)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// EXCHANGE RATE BANNER
+// Displays live PHP-based currency rates fetched via the `http` package and
+// parsed from JSON into a typed [ExchangeRate] model.
+// ─────────────────────────────────────────────────────────────────────────────
+class _ExchangeRateBanner extends StatelessWidget {
+  final ExchangeRate? rate;
+  final bool          loading;
+  final String?       error;
+  final VoidCallback? onRefresh;
+
+  // Which currencies to highlight in the banner
+  static const _highlight = ['USD', 'EUR', 'JPY', 'GBP', 'SGD'];
+
+  const _ExchangeRateBanner({
+    required this.rate,
+    required this.loading,
+    this.error,
+    this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0F3547), _cerulean],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: _cerulean.withOpacity(0.30),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header row ──────────────────────────────────────────────
+            Row(
+              children: [
+                const Text('💱', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Live Exchange Rates · PHP base',
+                    style: TextStyle(
+                      color: _white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+                // Refresh button
+                if (onRefresh != null && !loading)
+                  GestureDetector(
+                    onTap: onRefresh,
+                    child: Icon(Icons.refresh_rounded,
+                        size: 18, color: _vanilla.withOpacity(0.70)),
+                  ),
+                if (loading)
+                  const SizedBox(
+                    width: 14, height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.8,
+                      color: _vanilla,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── Content ─────────────────────────────────────────────────
+            if (loading && rate == null)
+              _shimmer()
+            else if (error != null && rate == null)
+              _errorRow()
+            else if (rate != null)
+              _ratesRow(rate!)
+            else
+              _shimmer(),
+
+            // ── Last-updated label ───────────────────────────────────
+            if (rate != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Updated: ${_shortDate(rate!.lastUpdated)}',
+                style: TextStyle(
+                  color: _vanilla.withOpacity(0.45),
+                  fontSize: 10,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Rate pills ───────────────────────────────────────────────────────────
+  Widget _ratesRow(ExchangeRate rate) {
+    final pairs = _highlight
+        .map((c) => MapEntry(c, rate.rateFor(c)))
+        .where((e) => e.value != null)
+        .toList();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: pairs.map((e) => _RatePill(
+        currency : e.key,
+        rate     : e.value!,
+      )).toList(),
+    );
+  }
+
+  // ── Skeleton shimmer ─────────────────────────────────────────────────────
+  Widget _shimmer() => Wrap(
+    spacing: 8,
+    children: List.generate(5, (i) => Container(
+      width: 64, height: 38,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(10),
+      ),
+    )),
+  );
+
+  // ── Error row ────────────────────────────────────────────────────────────
+  Widget _errorRow() => Row(
+    children: [
+      Icon(Icons.wifi_off_rounded,
+          size: 15, color: _vanilla.withOpacity(0.55)),
+      const SizedBox(width: 6),
+      Expanded(
+        child: Text(
+          error ?? 'Could not load rates.',
+          style: TextStyle(
+            color: _vanilla.withOpacity(0.60),
+            fontSize: 11.5,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      if (onRefresh != null)
+        GestureDetector(
+          onTap: onRefresh,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text('Retry',
+                style: TextStyle(
+                  color: _vanilla.withOpacity(0.85),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600)),
+          ),
+        ),
+    ],
+  );
+
+  // ── Date helper ──────────────────────────────────────────────────────────
+  String _shortDate(String utc) {
+    // e.g. "Wed, 18 Mar 2026 00:02:31 +0000" → "18 Mar 2026"
+    final parts = utc.split(' ');
+    if (parts.length >= 4) return '${parts[1]} ${parts[2]} ${parts[3]}';
+    return utc;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RATE PILL
+// ─────────────────────────────────────────────────────────────────────────────
+class _RatePill extends StatelessWidget {
+  final String currency;
+  final double rate;
+
+  const _RatePill({required this.currency, required this.rate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(currency,
+              style: const TextStyle(
+                color: _vanilla,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              )),
+          const SizedBox(height: 2),
+          Text(
+            rate < 0.01
+                ? rate.toStringAsFixed(5)
+                : rate.toStringAsFixed(4),
+            style: const TextStyle(
+              color: _white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
