@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/receipt_model.dart';
 import '../models/exchange_rate_model.dart';
 import '../utils/constants.dart';
@@ -26,6 +28,10 @@ class HomeScreen extends StatefulWidget {
   final bool rateLoading;
   final String? rateError;
   final VoidCallback? onRefreshRate;
+  final bool simulateError;
+  final VoidCallback? onToggleError;
+  final bool simulateNoNet;
+  final VoidCallback? onToggleNoNet;
 
   const HomeScreen({
     super.key,
@@ -36,6 +42,10 @@ class HomeScreen extends StatefulWidget {
     this.rateLoading = false,
     this.rateError,
     this.onRefreshRate,
+    this.simulateError = false,
+    this.onToggleError,
+    this.simulateNoNet = false,
+    this.onToggleNoNet,
   });
 
   @override
@@ -45,6 +55,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _search = '';
   String _cat = 'All';
+
+  // ── Connectivity ────────────────────────────────────────────────────────────
+  bool _isOffline = false;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   late final AnimationController _pulseCtrl;
   late final AnimationController _entryCtrl;
@@ -77,6 +91,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    // ── Check initial connectivity ──────────────────────────────────────────
+    Connectivity().checkConnectivity().then((results) {
+      if (mounted) {
+        setState(() => _isOffline = _noConnection(results));
+      }
+    });
+
+    // ── Listen for changes ──────────────────────────────────────────────────
+    _connectivitySub = Connectivity()
+        .onConnectivityChanged
+        .listen((results) {
+      if (!mounted) return;
+      final offline = _noConnection(results);
+      setState(() => _isOffline = offline);
+      // Auto-refresh rates when connection is restored
+      if (!offline) widget.onRefreshRate?.call();
+    });
+
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
@@ -91,8 +124,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _entryAnim = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
   }
 
+  bool _noConnection(List<ConnectivityResult> results) =>
+      results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+
   @override
   void dispose() {
+    _connectivitySub?.cancel();
     _pulseCtrl.dispose();
     _entryCtrl.dispose();
     super.dispose();
@@ -109,11 +146,56 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: _cream,
-      body: FadeTransition(
-        opacity: _entryAnim,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
+      body: Column(
+        children: [
+          // ── Offline banner — shown whenever there is no internet ────────────
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: _isOffline ? null : 0,
+            child: _isOffline
+                ? Container(
+                    width: double.infinity,
+                    color: const Color(0xFFB71C1C),
+                    padding: EdgeInsets.fromLTRB(
+                        16,
+                        MediaQuery.of(context).padding.top + 10,
+                        16,
+                        10),
+                    child: Row(children: [
+                      const Icon(Icons.wifi_off_rounded,
+                          color: Colors.white, size: 18),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('No Internet Connection',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                )),
+                            SizedBox(height: 2),
+                            Text('Turn on Wi-Fi or mobile data to use the app.',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11.5,
+                                )),
+                          ],
+                        ),
+                      ),
+                    ]),
+                  )
+                : const SizedBox.shrink(),
+          ),
+
+          // ── Main content ───────────────────────────────────────────────────
+          Expanded(
+            child: FadeTransition(
+              opacity: _entryAnim,
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
             SliverToBoxAdapter(
               child: _HeroCard(
                 topPad: topPad,
@@ -129,6 +211,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 loading: widget.rateLoading,
                 error: widget.rateError,
                 onRefresh: widget.onRefreshRate,
+                simulateError: widget.simulateError,
+                onToggleError: widget.onToggleError,
+                simulateNoNet: widget.simulateNoNet,
+                onToggleNoNet: widget.onToggleNoNet,
               ),
             ),
             SliverToBoxAdapter(
@@ -176,7 +262,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
           ],
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -726,6 +815,10 @@ class _ExchangeRateBanner extends StatelessWidget {
   final bool loading;
   final String? error;
   final VoidCallback? onRefresh;
+  final bool simulateError;
+  final VoidCallback? onToggleError;
+  final bool simulateNoNet;
+  final VoidCallback? onToggleNoNet;
 
   static const _highlight = ['USD', 'EUR', 'JPY', 'GBP', 'SGD'];
 
@@ -734,6 +827,10 @@ class _ExchangeRateBanner extends StatelessWidget {
     required this.loading,
     this.error,
     this.onRefresh,
+    this.simulateError = false,
+    this.onToggleError,
+    this.simulateNoNet = false,
+    this.onToggleNoNet,
   });
 
   @override
@@ -792,6 +889,64 @@ class _ExchangeRateBanner extends StatelessWidget {
                       color: _vanilla,
                     ),
                   ),
+                const SizedBox(width: 6),
+                // ── Debug: Wrong URL ──────────────────────────────
+                GestureDetector(
+                  onTap: onToggleError,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: simulateError
+                          ? Colors.red.withOpacity(0.35)
+                          : Colors.white.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: simulateError
+                            ? Colors.red.withOpacity(0.70)
+                            : Colors.white.withOpacity(0.20),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      simulateError ? '❌ Bad URL' : '🔗 URL',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: _vanilla.withOpacity(0.90),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                // ── Debug: No Internet ────────────────────────────
+                GestureDetector(
+                  onTap: onToggleNoNet,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: simulateNoNet
+                          ? Colors.orange.withOpacity(0.35)
+                          : Colors.white.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: simulateNoNet
+                            ? Colors.orange.withOpacity(0.70)
+                            : Colors.white.withOpacity(0.20),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      simulateNoNet ? '📵 No Net' : '📶 Net',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: _vanilla.withOpacity(0.90),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),

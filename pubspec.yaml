@@ -10,6 +10,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   http: ^1.2.1
   image_picker: ^1.1.2
+  connectivity_plus: ^6.0.3
 
 flutter:
   uses-material-design: true

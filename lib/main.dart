@@ -361,7 +361,21 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  void _addReceipt(Receipt r) => setState(() => _receipts.insert(0, r));
+  void _toggleErrorSimulation() {
+    setState(() {
+      ApiService.simulateError = !ApiService.simulateError;
+      ApiService.simulateNoNet = false; // turn off the other one
+    });
+    _loadExchangeRates();
+  }
+
+  void _toggleNoNetSimulation() {
+    setState(() {
+      ApiService.simulateNoNet = !ApiService.simulateNoNet;
+      ApiService.simulateError = false; // turn off the other one
+    });
+    _loadExchangeRates();
+  }
 
   void _delReceipt(int id) =>
       setState(() => _receipts.removeWhere((r) => r.id == id));
@@ -372,6 +386,8 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     setState(() => _tab = i);
     _tabFadeCtrl.forward();
   }
+
+  void _addReceipt(Receipt r) => setState(() => _receipts.insert(0, r));
 
   void _viewReceipt(Receipt r) {
     Navigator.pushNamed(
@@ -436,7 +452,11 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
           exchangeRate: _exchangeRate,
           rateLoading: _rateLoading,
           rateError: _rateError,
-          onRefreshRate: _loadExchangeRates),
+          onRefreshRate: _loadExchangeRates,
+          simulateError: ApiService.simulateError,
+          onToggleError: _toggleErrorSimulation,
+          simulateNoNet: ApiService.simulateNoNet,
+          onToggleNoNet: _toggleNoNetSimulation),
       FoldersScreen(
           receipts: _receipts, onView: _viewReceipt, onDelete: _delReceipt),
       ExpensesScreen(receipts: _receipts),

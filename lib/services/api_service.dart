@@ -1,39 +1,41 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
 import '../models/exchange_rate_model.dart';
 
-/// Centralised API service.
-///
-/// Currently wraps the Open Exchange Rates public endpoint to fetch
-/// live PHP-based currency rates.  All HTTP and JSON work lives here
-/// so the rest of the app stays decoupled from transport details.
 class ApiService {
-  // ── Configuration ─────────────────────────────────────────────────────────
-  static const String _baseUrl    = 'https://open.er-api.com/v6/latest';
+  // ── Configuration ──────────────────────────────────────────────────────────
+  static const String _goodUrl      = 'https://open.er-api.com/v6/latest';
+  static const String _badUrl       = 'https://open.er-api.com/v6/WRONG_ENDPOINT';
   static const String _baseCurrency = 'PHP';
-  static const Duration _timeout  = Duration(seconds: 12);
+  static const Duration _timeout    = Duration(seconds: 12);
 
-  // ── Public API ────────────────────────────────────────────────────────────
+  // ── Runtime test flags (toggled via debug button in UI) ────────────────────
+  static bool simulateError = false; // uses wrong URL → real 404
+  static bool simulateNoNet = false; // skips request → mimics no internet
 
-  /// Fetches the latest exchange rates with PHP as the base currency.
-  ///
-  /// Returns a typed [ExchangeRate] on success.
-  /// Throws an [ApiException] on any network or HTTP error.
+  // ── Public API ─────────────────────────────────────────────────────────────
   static Future<ExchangeRate> fetchExchangeRates() async {
-    final raw = await _get('$_baseUrl/$_baseCurrency');
+    // Simulate no internet — skip the request entirely
+    if (simulateNoNet) {
+      await Future.delayed(const Duration(seconds: 1));
+      throw const ApiException(
+        'No internet connection. Please check your network.',
+      );
+    }
+
+    // Simulate wrong URL — hits a real 404 from the server
+    final url = simulateError
+        ? '$_badUrl/$_baseCurrency'
+        : '$_goodUrl/$_baseCurrency';
+
+    final raw = await _get(url);
     return ExchangeRate.fromJson(raw);
   }
 
-  /// Low-level helper: performs a GET request and returns the decoded JSON.
-  ///
-  /// Throws [ApiException] for:
-  ///  - [SocketException]  — no internet / DNS failure
-  ///  - [HttpException]    — non-200 status codes
-  ///  - [FormatException]  — body is not valid JSON
-  ///  - Timeout            — request exceeded [_timeout]
+  // ── Low-level GET ──────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> _get(String url) async {
     late http.Response response;
 
@@ -41,50 +43,54 @@ class ApiService {
       response = await http
           .get(Uri.parse(url))
           .timeout(_timeout);
-    } on SocketException catch (e) {
-      throw ApiException(
-        'No internet connection. Please check your network.',
-        original: e,
-      );
-    } on http.ClientException catch (e) {
-      throw ApiException(
-        'Network error: ${e.message}',
-        original: e,
+    } on TimeoutException {
+      throw const ApiException(
+        'Request timed out. Check your internet connection.',
       );
     } catch (e) {
-      // Covers TimeoutException and anything else
-      throw ApiException('Request failed: $e', original: e);
+      // Flutter Web surfaces network failures as generic ClientException.
+      // We inspect the message to show something useful.
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('failed host lookup') ||
+          msg.contains('network') ||
+          msg.contains('connection') ||
+          msg.contains('socketexception') ||
+          msg.contains('errno = 7') ||
+          msg.contains('no address')) {
+        throw const ApiException(
+          'No internet connection. Please check your network.',
+        );
+      }
+      throw ApiException('Request failed: $e');
     }
 
-    // ── HTTP status check ──────────────────────────────────────────────────
+    // HTTP status check
     if (response.statusCode != 200) {
       throw ApiException(
-        'Server returned ${response.statusCode}: ${response.reasonPhrase}',
+        'Server error ${response.statusCode}: ${response.reasonPhrase}',
         statusCode: response.statusCode,
       );
     }
 
-    // ── JSON decoding ──────────────────────────────────────────────────────
+    // JSON decode
     try {
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic>) {
-        throw const FormatException('Expected a JSON object at root level.');
+        throw const FormatException('Expected a JSON object.');
       }
       return decoded;
     } on FormatException catch (e) {
-      throw ApiException('Invalid JSON from server: ${e.message}', original: e);
+      throw ApiException('Invalid response from server: ${e.message}');
     }
   }
 }
 
-// ── Custom exception ───────────────────────────────────────────────────────
-/// Thrown by [ApiService] for any HTTP / network / parsing failure.
+// ── Custom exception ────────────────────────────────────────────────────────
 class ApiException implements Exception {
   final String message;
   final int?   statusCode;
-  final Object? original;
 
-  const ApiException(this.message, {this.statusCode, this.original});
+  const ApiException(this.message, {this.statusCode});
 
   @override
   String toString() => 'ApiException($message)';

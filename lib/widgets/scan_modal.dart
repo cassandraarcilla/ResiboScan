@@ -54,6 +54,10 @@ class _ScanModalState extends State<ScanModal>
   Uint8List?   _pickedBytes;
   String?      _pickedPath;
 
+  // ── Validation errors ─────────────────────────────────────────────────────
+  String? _storeError;
+  String? _amountError;
+
   late final AnimationController _slideCtrl;
   late final Animation<Offset>   _slideAnim;
 
@@ -132,20 +136,57 @@ class _ScanModalState extends State<ScanModal>
   }
 
   void _save() {
-    if (_store.isEmpty || _amount.isEmpty) return;
-    widget.onSave(Receipt(
-      id         : DateTime.now().millisecondsSinceEpoch,
-      store      : _store,
-      amount     : double.tryParse(_amount) ?? 0,
-      date       : _date,
-      category   : _category,
-      warranty   : _warranty.isEmpty ? null : _warranty,
-      image      : _pickedPath ?? _image,
-      folder     : _folder,
-      notes      : _notes,
-      imageBytes : _pickedBytes,
-    ));
-    Navigator.pop(context);
+    // ── Validate ────────────────────────────────────────────────────────────
+    String? storeErr;
+    String? amountErr;
+
+    if (_store.trim().isEmpty) {
+      storeErr = 'Store name is required.';
+    }
+
+    if (_amount.trim().isEmpty) {
+      amountErr = 'Amount is required.';
+    } else {
+      try {
+        final parsed = double.parse(_amount.trim());
+        if (parsed < 0) amountErr = 'Amount cannot be negative.';
+      } catch (_) {
+        amountErr = 'Enter a valid number (e.g. 150.00).';
+      }
+    }
+
+    if (storeErr != null || amountErr != null) {
+      setState(() {
+        _storeError  = storeErr;
+        _amountError = amountErr;
+      });
+      return;
+    }
+
+    // ── Save ────────────────────────────────────────────────────────────────
+    try {
+      widget.onSave(Receipt(
+        id         : DateTime.now().millisecondsSinceEpoch,
+        store      : _store.trim(),
+        amount     : double.parse(_amount.trim()),
+        date       : _date,
+        category   : _category,
+        warranty   : _warranty.isEmpty ? null : _warranty,
+        image      : _pickedPath ?? _image,
+        folder     : _folder,
+        notes      : _notes,
+        imageBytes : _pickedBytes,
+      ));
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save receipt: $e'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _field(
@@ -154,6 +195,7 @@ class _ScanModalState extends State<ScanModal>
     TextInputType? type,
     String? hint,
     bool optional = false,
+    String? errorText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +218,16 @@ class _ScanModalState extends State<ScanModal>
         ]),
         const SizedBox(height: 7),
         TextField(
-          onChanged: onChanged,
+          onChanged: (v) {
+            onChanged(v);
+            // Clear error as soon as user types
+            if (errorText != null) {
+              setState(() {
+                if (label.contains('Store')) _storeError  = null;
+                if (label.contains('Amount')) _amountError = null;
+              });
+            }
+          },
           keyboardType: type,
           style: const TextStyle(
             fontSize: 13.5, color: _inkMid, fontWeight: FontWeight.w500),
@@ -193,16 +244,38 @@ class _ScanModalState extends State<ScanModal>
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide: BorderSide(
-                color: _cerulean.withOpacity(0.15), width: 1.5),
+                color: errorText != null
+                    ? Colors.red.shade400
+                    : _cerulean.withOpacity(0.15),
+                width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: _cerulean, width: 1.8),
+              borderSide: BorderSide(
+                color: errorText != null ? Colors.red.shade500 : _cerulean,
+                width: 1.8),
             ),
-            filled: true, fillColor: _white,
+            filled: true,
+            fillColor: errorText != null
+                ? Colors.red.shade50
+                : _white,
           ),
         ),
-        const SizedBox(height: 14),
+        if (errorText != null) ...[
+          const SizedBox(height: 5),
+          Row(children: [
+            Icon(Icons.error_outline_rounded,
+              size: 13, color: Colors.red.shade500),
+            const SizedBox(width: 4),
+            Text(errorText,
+              style: TextStyle(
+                fontSize: 11.5,
+                color: Colors.red.shade600,
+                fontWeight: FontWeight.w500,
+              )),
+          ]),
+        ],
+        SizedBox(height: errorText != null ? 10 : 14),
       ],
     );
   }
@@ -522,10 +595,13 @@ class _ScanModalState extends State<ScanModal>
                     // ── Text fields ────────────────────────────────
                     _field('Store / Merchant *',
                       (v) => setState(() => _store = v),
-                      hint: 'e.g. SM Supermarket'),
+                      hint: 'e.g. SM Supermarket',
+                      errorText: _storeError),
                     _field('Amount (PHP) *',
                       (v) => setState(() => _amount = v),
-                      type: TextInputType.number, hint: '0.00'),
+                      type: TextInputType.number,
+                      hint: '0.00',
+                      errorText: _amountError),
                     _field('Warranty Date',
                       (v) => setState(() => _warranty = v),
                       hint: 'YYYY-MM-DD', optional: true),
@@ -640,41 +716,30 @@ class _ScanModalState extends State<ScanModal>
 
                     // ── Save button ────────────────────────────────
                     GestureDetector(
-                      onTap: (_store.isEmpty || _amount.isEmpty) ? null : _save,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
+                      onTap: _save,
+                      child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          gradient: (_store.isEmpty || _amount.isEmpty)
-                              ? null
-                              : const LinearGradient(
-                                  colors: [_cerulean, _cyan],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight),
-                          color: (_store.isEmpty || _amount.isEmpty)
-                              ? _inkLight.withOpacity(0.12) : null,
+                          gradient: const LinearGradient(
+                            colors: [_cerulean, _cyan],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight),
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: (_store.isEmpty || _amount.isEmpty)
-                              ? []
-                              : [BoxShadow(
-                                  color: _cerulean.withOpacity(0.35),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6))],
+                          boxShadow: [BoxShadow(
+                            color: _cerulean.withOpacity(0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6))],
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.save_alt_rounded,
-                              color: (_store.isEmpty || _amount.isEmpty)
-                                  ? _inkLight : _white,
-                              size: 18),
-                            const SizedBox(width: 8),
+                              color: _white, size: 18),
+                            SizedBox(width: 8),
                             Text('Save Receipt', style: TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w800,
-                              color: (_store.isEmpty || _amount.isEmpty)
-                                  ? _inkLight : _white,
-                              letterSpacing: 0.2)),
+                              color: _white, letterSpacing: 0.2)),
                           ],
                         ),
                       ),
