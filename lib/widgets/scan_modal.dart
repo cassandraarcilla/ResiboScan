@@ -1,5 +1,7 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/receipt_model.dart';
 import '../utils/constants.dart';
 
@@ -48,6 +50,9 @@ class _ScanModalState extends State<ScanModal>
   String _category = 'Grocery';
   String _folder   = 'Personal';
   String _image    = '$_imgBase/1.svg';
+  XFile?       _pickedXFile;
+  Uint8List?   _pickedBytes;
+  String?      _pickedPath;
 
   late final AnimationController _slideCtrl;
   late final Animation<Offset>   _slideAnim;
@@ -74,18 +79,71 @@ class _ScanModalState extends State<ScanModal>
   void _goToForm()   { setState(() => _step = 'form');   _slideCtrl..reset()..forward(); }
   void _goToChoose() { setState(() => _step = 'choose'); _slideCtrl..reset()..forward(); }
 
+  Future<void> _pickFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (!mounted) return;
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _pickedXFile = picked;
+          _pickedBytes = bytes;
+          _pickedPath  = picked.path;
+        });
+        _goToForm();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not open gallery: $e'),
+        backgroundColor: Colors.red.shade700,
+      ));
+    }
+  }
+
+  Future<void> _pickFromCamera() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (!mounted) return;
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _pickedXFile = picked;
+          _pickedBytes = bytes;
+          _pickedPath  = picked.path;
+        });
+        _goToForm();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not open camera: $e'),
+        backgroundColor: Colors.red.shade700,
+      ));
+    }
+  }
+
   void _save() {
     if (_store.isEmpty || _amount.isEmpty) return;
     widget.onSave(Receipt(
-      id      : DateTime.now().millisecondsSinceEpoch,
-      store   : _store,
-      amount  : double.tryParse(_amount) ?? 0,
-      date    : _date,
-      category: _category,
-      warranty: _warranty.isEmpty ? null : _warranty,
-      image   : _image,
-      folder  : _folder,
-      notes   : _notes,
+      id         : DateTime.now().millisecondsSinceEpoch,
+      store      : _store,
+      amount     : double.tryParse(_amount) ?? 0,
+      date       : _date,
+      category   : _category,
+      warranty   : _warranty.isEmpty ? null : _warranty,
+      image      : _pickedPath ?? _image,
+      folder     : _folder,
+      notes      : _notes,
+      imageBytes : _pickedBytes,
     ));
     Navigator.pop(context);
   }
@@ -227,7 +285,7 @@ class _ScanModalState extends State<ScanModal>
                       icon: Icons.image_outlined,
                       label: 'Upload from Gallery',
                       sub: 'Pick an existing photo from your gallery',
-                      accent: _sandy, onTap: _goToForm,
+                      accent: _sandy, onTap: _pickFromGallery,
                     ),
                     const SizedBox(height: 10),
                     _ChoiceOption(
@@ -296,6 +354,168 @@ class _ScanModalState extends State<ScanModal>
                         },
                       ),
                     ),
+
+                    const SizedBox(height: 18),
+
+                    // ── Attach Image ───────────────────────────────
+                    _SectionLabel(label: 'Attach Image'),
+                    const SizedBox(height: 10),
+                    if (_pickedBytes == null)
+                      GestureDetector(
+                        onTap: () async {
+                          await showModalBottomSheet(
+                            context: context,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => Container(
+                              padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+                              decoration: const BoxDecoration(
+                                color: _cream,
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(24)),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 36, height: 4,
+                                    margin: const EdgeInsets.only(bottom: 18),
+                                    decoration: BoxDecoration(
+                                      color: _cerulean.withOpacity(0.18),
+                                      borderRadius: BorderRadius.circular(4)),
+                                  ),
+                                  ListTile(
+                                    leading: Container(
+                                      width: 42, height: 42,
+                                      decoration: BoxDecoration(
+                                        color: _sandy.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(12)),
+                                      child: const Icon(Icons.image_outlined,
+                                        color: _sandy, size: 20),
+                                    ),
+                                    title: const Text('Upload from Gallery',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14, color: _ink)),
+                                    subtitle: Text('Pick a photo from your gallery',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _inkLight.withOpacity(0.8))),
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      _pickFromGallery();
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ListTile(
+                                    leading: Container(
+                                      width: 42, height: 42,
+                                      decoration: BoxDecoration(
+                                        color: _cerulean.withOpacity(0.10),
+                                        borderRadius: BorderRadius.circular(12)),
+                                      child: const Icon(Icons.camera_alt_outlined,
+                                        color: _cerulean, size: 20),
+                                    ),
+                                    title: const Text('Take a Photo',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14, color: _ink)),
+                                    subtitle: Text('Use your camera',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _inkLight.withOpacity(0.8))),
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      _pickFromCamera();
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          decoration: BoxDecoration(
+                            color: _white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: _sandy.withOpacity(0.45),
+                              width: 1.5,
+                              strokeAlign: BorderSide.strokeAlignInside,
+                            ),
+                          ),
+                          child: Column(children: [
+                            Container(
+                              width: 44, height: 44,
+                              decoration: BoxDecoration(
+                                color: _sandy.withOpacity(0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.add_photo_alternate_outlined,
+                                color: _sandy, size: 22),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text('Tap to attach image',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: _inkMid)),
+                            const SizedBox(height: 3),
+                            Text('Gallery or Camera',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: _inkLight.withOpacity(0.75))),
+                          ]),
+                        ),
+                      )
+                    else ...[ 
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Stack(
+                          children: [
+                            Image.memory(
+                              _pickedBytes!,
+                              height: 160,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              top: 8, right: 8,
+                              child: GestureDetector(
+                                onTap: () => setState(() {
+                                  _pickedXFile = null;
+                                  _pickedBytes = null;
+                                  _pickedPath  = null;
+                                }),
+                                child: Container(
+                                  width: 30, height: 30,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.55),
+                                    shape: BoxShape.circle),
+                                  child: const Icon(Icons.close_rounded,
+                                    color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _pickFromGallery,
+                        child: Row(children: [
+                          const Icon(Icons.swap_horiz_rounded,
+                            size: 15, color: _cerulean),
+                          const SizedBox(width: 5),
+                          Text('Change image',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _cerulean.withOpacity(0.85),
+                              fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
+                    ],
 
                     const SizedBox(height: 18),
 

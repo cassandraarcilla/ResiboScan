@@ -1,6 +1,30 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/receipt_model.dart';
+
+// ── Safe SVG icon: only loads asset paths starting with "assets/" ─────────────
+Widget _safeIcon(String imagePath, double size, Color fallbackColor) {
+  if (imagePath.startsWith('assets/')) {
+    return SvgPicture.asset(
+      imagePath,
+      width: size, height: size,
+      fit: BoxFit.cover,
+      placeholderBuilder: (_) => _iconFallback(size, fallbackColor),
+    );
+  }
+  return _iconFallback(size, fallbackColor);
+}
+
+Widget _iconFallback(double size, Color color) => Container(
+  width: size, height: size,
+  decoration: BoxDecoration(
+    color: color.withOpacity(0.12),
+    shape: BoxShape.circle,
+  ),
+  child: Icon(Icons.receipt_rounded, size: size * 0.4, color: color.withOpacity(0.5)),
+);
+
 
 // ── Vintage Hues Palette ─────────────────────────────────────────────────────
 const _cerulean    = Color(0xFF2D728F);
@@ -177,64 +201,8 @@ class ReceiptDetailScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
 
-                // ── RECEIPT SVG IMAGE ────────────────────────────────
-                Container(
-                  height: 180,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: _vanillaSoft,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: _vanilla.withOpacity(0.5), width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _sandy.withOpacity(0.10),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ClipOval(
-                        child: SvgPicture.asset(
-                          receipt.image,
-                          width : 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          placeholderBuilder: (_) => Container(
-                            width: 100, height: 100,
-                            decoration: const BoxDecoration(
-                              color: Color(0x1A7A9BAA),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 36, color: Color(0x807A9BAA)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _sandy.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          receipt.formattedDate,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _inkMid,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // ── RECEIPT IMAGE / ICON ─────────────────────────────
+                _ReceiptImageCard(receipt: receipt),
 
                 const SizedBox(height: 20),
 
@@ -344,8 +312,234 @@ class ReceiptDetailScreen extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Text-only pill
+// Receipt image card — full-width photo or SVG icon, tap to zoom
 // ─────────────────────────────────────────────────────────────────────────────
+class _ReceiptImageCard extends StatelessWidget {
+  final Receipt receipt;
+  const _ReceiptImageCard({required this.receipt});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasPhoto = receipt.imageBytes != null;
+
+    return GestureDetector(
+      onTap: hasPhoto
+          ? () => _ZoomViewer.show(context, receipt.imageBytes!)
+          : null,
+      child: Container(
+        width: double.infinity,
+        height: 200,
+        decoration: BoxDecoration(
+          color: _vanillaSoft,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: _vanilla.withOpacity(0.5), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: _sandy.withOpacity(0.10),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+
+              // ── Background: photo or centred SVG ─────────────────
+              if (hasPhoto)
+                Image.memory(
+                  receipt.imageBytes!,
+                  fit: BoxFit.cover,
+                )
+              else
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ClipOval(
+                        child: SvgPicture.asset(
+                          receipt.image.startsWith('assets/')
+                              ? receipt.image
+                              : 'assets/images/8.svg',
+                          width: 90, height: 90,
+                          fit: BoxFit.cover,
+                          placeholderBuilder: (_) => Container(
+                            width: 90, height: 90,
+                            decoration: const BoxDecoration(
+                              color: Color(0x1A7A9BAA),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.receipt_rounded,
+                              size: 36, color: _inkLight),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _sandy.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          receipt.formattedDate,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _inkMid,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // ── SVG category icon badge (bottom-left, always) ─────
+              Positioned(
+                bottom: 10, left: 10,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: SvgPicture.asset(
+                      receipt.image.startsWith('assets/')
+                          ? receipt.image
+                          : 'assets/images/8.svg',
+                      width: 44, height: 44,
+                      fit: BoxFit.cover,
+                      placeholderBuilder: (_) => Container(
+                        width: 44, height: 44,
+                        color: _vanillaSoft,
+                        child: const Icon(Icons.receipt_rounded,
+                          size: 20, color: _inkLight),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Date badge (bottom-right, photo only) ─────────────
+              if (hasPhoto)
+                Positioned(
+                  bottom: 10, right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      receipt.formattedDate,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+
+              // ── Zoom hint (top-right, photo only) ─────────────────
+              if (hasPhoto)
+                Positioned(
+                  top: 10, right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.40),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.zoom_in_rounded,
+                      color: Colors.white, size: 16),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full-screen zoom viewer — uses Dialog to avoid route freeze on web
+// ─────────────────────────────────────────────────────────────────────────────
+class _ZoomViewer {
+  static void show(BuildContext context, Uint8List bytes) {
+    final size = MediaQuery.of(context).size;
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: SizedBox(
+          width: size.width,
+          height: size.height,
+          child: Stack(
+            children: [
+              // ── Zoomable image ──────────────────────────────────
+              Positioned.fill(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 5.0,
+                  child: Center(
+                    child: Image.memory(bytes, fit: BoxFit.contain),
+                  ),
+                ),
+              ),
+              // ── Close button ────────────────────────────────────
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 12,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(ctx),
+                  child: Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.20),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.30), width: 1),
+                    ),
+                    child: const Icon(Icons.close_rounded,
+                      color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
+              // ── Hint ────────────────────────────────────────────
+              Positioned(
+                bottom: 30, left: 0, right: 0,
+                child: Center(
+                  child: Text('Pinch to zoom · Tap outside to close',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.55),
+                      fontSize: 12,
+                    )),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HeaderPill extends StatelessWidget {
   final String label;
   final Color bgColor, textColor;

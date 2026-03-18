@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Resiboscan needs access to your photo library to upload receipt images.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Resiboscan needs camera access to scan your receipts.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Resiboscan needs access to save receipt images to your photo library.</string>
 </dict>
 </plist>

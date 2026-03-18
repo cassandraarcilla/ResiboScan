@@ -3,6 +3,22 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../models/receipt_model.dart';
 import '../utils/constants.dart';
 
+// Safe SVG loader — only uses SvgPicture.asset for actual asset paths
+Widget _safeCardIcon(String imagePath, double size, Color fallbackColor) {
+  if (imagePath.startsWith('assets/')) {
+    return SvgPicture.asset(
+      imagePath,
+      width: size, height: size,
+      fit: BoxFit.cover,
+      placeholderBuilder: (_) => Icon(
+        Icons.receipt_rounded, size: size * 0.5,
+        color: fallbackColor.withOpacity(0.5)),
+    );
+  }
+  return Icon(Icons.receipt_rounded,
+    size: size * 0.5, color: fallbackColor.withOpacity(0.5));
+}
+
 // ── Vintage Hues Palette ─────────────────────────────────────────────────────
 const _cerulean    = Color(0xFF2D728F);
 const _sandy       = Color(0xFFF49E4C);
@@ -62,22 +78,49 @@ class ReceiptCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(children: [
 
-            // ── Circular SVG icon ──────────────────────────────────
-            ClipOval(
-              child: SvgPicture.asset(
-                receipt.image,
-                width : 54,
-                height: 54,
-                fit: BoxFit.cover,
-                placeholderBuilder: (_) => Container(
-                  width: 54, height: 54,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.10),
-                    shape: BoxShape.circle,
+            // ── Circular icon: always SVG, photo overlay if present ─
+            SizedBox(
+              width: 54, height: 54,
+              child: Stack(
+                children: [
+                  // SVG category icon always shown as base
+                  ClipOval(
+                    child: SvgPicture.asset(
+                      receipt.image.startsWith('assets/')
+                          ? receipt.image
+                          : 'assets/images/8.svg',
+                      width: 54, height: 54,
+                      fit: BoxFit.cover,
+                      placeholderBuilder: (_) => Container(
+                        width: 54, height: 54,
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.receipt_rounded,
+                          size: 24, color: color.withOpacity(0.5)),
+                      ),
+                    ),
                   ),
-                  child: Icon(Icons.image_not_supported_outlined,
-                    size: 22, color: color.withOpacity(0.5)),
-                ),
+                  // If a photo was attached, show it as a small overlay
+                  if (receipt.imageBytes != null)
+                    Positioned(
+                      right: 0, bottom: 0,
+                      child: Container(
+                        width: 22, height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _white, width: 1.5),
+                        ),
+                        child: ClipOval(
+                          child: Image.memory(
+                            receipt.imageBytes!,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 

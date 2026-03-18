@@ -1,13 +1,16 @@
+import 'dart:typed_data';
+
 class Receipt {
-  final int     id;
-  final String  store;
-  final double  amount;
-  final String  date;
-  final String  category;
-  final String? warranty;
-  final String  image;
-  final String  folder;
-  final String  notes;
+  final int        id;
+  final String     store;
+  final double     amount;
+  final String     date;
+  final String     category;
+  final String?    warranty;
+  final String     image;
+  final String     folder;
+  final String     notes;
+  final Uint8List? imageBytes; // picked image bytes (web-safe)
 
   Receipt({
     required this.id,
@@ -19,6 +22,7 @@ class Receipt {
     required this.image,
     required this.folder,
     required this.notes,
+    this.imageBytes,
   });
 
   static DateTime? _parseDate(String? raw) {
