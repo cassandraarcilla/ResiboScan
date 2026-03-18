@@ -12,7 +12,6 @@ import 'screens/alerts_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'widgets/scan_modal.dart';
 
-// ── Vintage Hues Palette ─────────────────────────────────────────────────────
 const _cerulean = Color(0xFF2D728F);
 const _cyan     = Color(0xFF3B8EA5);
 const _vanilla  = Color(0xFFF5EE9E);
@@ -22,7 +21,6 @@ const _white    = Color(0xFFFFFFFF);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
@@ -48,16 +46,12 @@ class ResiboScanApp extends StatelessWidget {
         splashColor: _cerulean.withOpacity(0.08),
         highlightColor: _cerulean.withOpacity(0.04),
       ),
-      // ── Named-route wiring ───────────────────────────────────────────────
       home: const SplashScreen(),
       onGenerateRoute: generateRoute,
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SPLASH SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
   @override
@@ -115,7 +109,6 @@ class _SplashScreenState extends State<SplashScreen>
     }
     await Future.delayed(const Duration(milliseconds: 400));
     if (mounted) {
-      // ── Replace splash with the main shell via named route ──────────────
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     }
   }
@@ -139,21 +132,25 @@ class _SplashScreenState extends State<SplashScreen>
         child: Stack(
           children: [
             Positioned(
-              top: -size.width * 0.3, right: -size.width * 0.2,
+              top: -size.width * 0.3,
+              right: -size.width * 0.2,
               child: Container(
-                width: size.width * 0.75, height: size.width * 0.75,
+                width: size.width * 0.75,
+                height: size.width * 0.75,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.045)),
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.045)),
               ),
             ),
             Positioned(
-              bottom: -size.width * 0.25, left: -size.width * 0.15,
+              bottom: -size.width * 0.25,
+              left: -size.width * 0.15,
               child: Container(
-                width: size.width * 0.65, height: size.width * 0.65,
+                width: size.width * 0.65,
+                height: size.width * 0.65,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _vanilla.withOpacity(0.06)),
+                    shape: BoxShape.circle,
+                    color: _vanilla.withOpacity(0.06)),
               ),
             ),
             FadeTransition(
@@ -169,7 +166,8 @@ class _SplashScreenState extends State<SplashScreen>
                       child: ScaleTransition(
                         scale: _scaleAnim,
                         child: Container(
-                          width: 100, height: 100,
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.13),
                             borderRadius: BorderRadius.circular(30),
@@ -178,14 +176,21 @@ class _SplashScreenState extends State<SplashScreen>
                                 width: 1.5),
                             boxShadow: [
                               BoxShadow(
-                                color: _cerulean.withOpacity(0.4),
-                                blurRadius: 40,
-                                offset: const Offset(0, 16)),
+                                  color: _cerulean.withOpacity(0.4),
+                                  blurRadius: 40,
+                                  offset: const Offset(0, 16)),
                             ],
                           ),
                           alignment: Alignment.center,
-                          child: const Text('🧾',
-                              style: TextStyle(fontSize: 48)),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(26),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              width: 64,
+                              height: 64,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -195,13 +200,17 @@ class _SplashScreenState extends State<SplashScreen>
                       child: RichText(
                         text: const TextSpan(
                           style: TextStyle(
-                            fontFamily: 'Georgia', fontSize: 36,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5, height: 1.0),
+                              fontFamily: 'Georgia',
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                              height: 1.0),
                           children: [
-                            TextSpan(text: 'Resibo',
+                            TextSpan(
+                                text: 'Resibo',
                                 style: TextStyle(color: _white)),
-                            TextSpan(text: 'Scan',
+                            TextSpan(
+                                text: 'Scan',
                                 style: TextStyle(color: _vanilla)),
                           ],
                         ),
@@ -211,9 +220,10 @@ class _SplashScreenState extends State<SplashScreen>
                     Text(
                       'Receipt Scanner & Organizer',
                       style: TextStyle(
-                        color: _vanilla.withOpacity(0.60),
-                        fontSize: 13.5, fontWeight: FontWeight.w400,
-                        letterSpacing: 0.3),
+                          color: _vanilla.withOpacity(0.60),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.3),
                     ),
                     const SizedBox(height: 52),
                     SizedBox(
@@ -236,7 +246,8 @@ class _SplashScreenState extends State<SplashScreen>
                             Text(_progressLabel(_progress),
                                 style: TextStyle(
                                     color: _vanilla.withOpacity(0.50),
-                                    fontSize: 11, letterSpacing: 0.2)),
+                                    fontSize: 11,
+                                    letterSpacing: 0.2)),
                             Text('${_progress.toInt()}%',
                                 style: TextStyle(
                                     color: _vanilla.withOpacity(0.55),
@@ -251,7 +262,8 @@ class _SplashScreenState extends State<SplashScreen>
                       'by ResiboScan Team',
                       style: TextStyle(
                           color: Colors.white.withOpacity(0.22),
-                          fontSize: 11, letterSpacing: 0.5),
+                          fontSize: 11,
+                          letterSpacing: 0.5),
                     ),
                   ],
                 ),
@@ -264,20 +276,13 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   String _progressLabel(double p) {
-    if (p < 30) return 'Starting up…';
-    if (p < 60) return 'Loading data…';
-    if (p < 90) return 'Almost ready…';
+    if (p < 30) return 'Starting up...';
+    if (p < 60) return 'Loading data...';
+    if (p < 90) return 'Almost ready...';
     return 'Ready!';
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN APP SHELL  (route: AppRoutes.main = '/main')
-//
-// Owns the receipt list state and the active tab index.
-// Receipt detail is pushed as a full named route instead of swapping
-// the Scaffold body, so Navigator.pop() and the back gesture work naturally.
-// ─────────────────────────────────────────────────────────────────────────────
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
   @override
@@ -286,15 +291,15 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   int _tab = 0;
-  List<Receipt> _receipts = seedReceipts.map(Receipt.fromMap).toList();
+  List<Receipt> _receipts = [];
+  bool _receiptsLoading = true;
 
-  // ── Exchange-rate state (fetched via http + JSON parsing) ────────────────
   ExchangeRate? _exchangeRate;
-  bool          _rateLoading = true;
-  String?       _rateError;
+  bool _rateLoading = true;
+  String? _rateError;
 
   late final AnimationController _tabFadeCtrl;
-  late final Animation<double>   _tabFadeAnim;
+  late final Animation<double> _tabFadeAnim;
 
   @override
   void initState() {
@@ -305,21 +310,48 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     _tabFadeAnim =
         CurvedAnimation(parent: _tabFadeCtrl, curve: Curves.easeOut);
 
-    // Fetch live currency rates using the http package
+    _loadReceipts();
     _loadExchangeRates();
   }
 
-  /// Calls [ApiService.fetchExchangeRates], which uses the `http` package
-  /// to GET the JSON endpoint, then parses the response into [ExchangeRate].
+  Future<void> _loadReceipts() async {
+    setState(() => _receiptsLoading = true);
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (mounted) {
+      setState(() {
+        _receipts = seedReceipts.map(Receipt.fromMap).toList();
+        _receiptsLoading = false;
+      });
+    }
+  }
+
   Future<void> _loadExchangeRates() async {
-    setState(() { _rateLoading = true; _rateError = null; });
+    setState(() {
+      _rateLoading = true;
+      _rateError = null;
+    });
     try {
       final rate = await ApiService.fetchExchangeRates();
-      if (mounted) setState(() { _exchangeRate = rate; _rateLoading = false; });
+      if (mounted) {
+        setState(() {
+          _exchangeRate = rate;
+          _rateLoading = false;
+        });
+      }
     } on ApiException catch (e) {
-      if (mounted) setState(() { _rateError = e.message; _rateLoading = false; });
+      if (mounted) {
+        setState(() {
+          _rateError = e.message;
+          _rateLoading = false;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { _rateError = e.toString(); _rateLoading = false; });
+      if (mounted) {
+        setState(() {
+          _rateError = e.toString();
+          _rateLoading = false;
+        });
+      }
     }
   }
 
@@ -329,8 +361,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  void _addReceipt(Receipt r) =>
-      setState(() => _receipts.insert(0, r));
+  void _addReceipt(Receipt r) => setState(() => _receipts.insert(0, r));
 
   void _delReceipt(int id) =>
       setState(() => _receipts.removeWhere((r) => r.id == id));
@@ -342,7 +373,6 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     _tabFadeCtrl.forward();
   }
 
-  // ── Push receipt detail as a named route ────────────────────────────────
   void _viewReceipt(Receipt r) {
     Navigator.pushNamed(
       context,
@@ -352,7 +382,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
         onBack: () => Navigator.pop(context),
         onDelete: (id) {
           _delReceipt(id);
-          Navigator.pop(context); // return to tab after delete
+          Navigator.pop(context);
         },
       ),
     );
@@ -365,15 +395,48 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       statusBarIconBrightness: Brightness.light,
     ));
 
+    if (_receiptsLoading) {
+      return Scaffold(
+        backgroundColor: _cream,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/logo.png',
+                width: 72,
+                height: 72,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 28),
+              const CircularProgressIndicator(
+                color: _cerulean,
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Loading your receipts...',
+                style: TextStyle(
+                  color: _cerulean.withOpacity(0.75),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final screens = [
       HomeScreen(
-          receipts      : _receipts,
-          onView        : _viewReceipt,
-          onDelete      : _delReceipt,
-          exchangeRate  : _exchangeRate,
-          rateLoading   : _rateLoading,
-          rateError     : _rateError,
-          onRefreshRate : _loadExchangeRates),
+          receipts: _receipts,
+          onView: _viewReceipt,
+          onDelete: _delReceipt,
+          exchangeRate: _exchangeRate,
+          rateLoading: _rateLoading,
+          rateError: _rateError,
+          onRefreshRate: _loadExchangeRates),
       FoldersScreen(
           receipts: _receipts, onView: _viewReceipt, onDelete: _delReceipt),
       ExpensesScreen(receipts: _receipts),

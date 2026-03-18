@@ -5,7 +5,6 @@ import '../models/exchange_rate_model.dart';
 import '../utils/constants.dart';
 import '../widgets/receipt_card.dart';
 
-// ── Vintage Hues Palette ─────────────────────────────────────────────────────
 const _cerulean    = Color(0xFF2D728F);
 const _cyan        = Color(0xFF3B8EA5);
 const _vanilla     = Color(0xFFF5EE9E);
@@ -23,10 +22,9 @@ class HomeScreen extends StatefulWidget {
   final ValueChanged<Receipt> onView;
   final ValueChanged<int> onDelete;
 
-  // ── Live exchange-rate data (fetched via http) ───────────────────────────
   final ExchangeRate? exchangeRate;
-  final bool          rateLoading;
-  final String?       rateError;
+  final bool rateLoading;
+  final String? rateError;
   final VoidCallback? onRefreshRate;
 
   const HomeScreen({
@@ -35,7 +33,7 @@ class HomeScreen extends StatefulWidget {
     required this.onView,
     required this.onDelete,
     this.exchangeRate,
-    this.rateLoading  = false,
+    this.rateLoading = false,
     this.rateError,
     this.onRefreshRate,
   });
@@ -44,36 +42,37 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _search = '';
-  String _cat    = 'All';
+  String _cat = 'All';
 
   late final AnimationController _pulseCtrl;
   late final AnimationController _entryCtrl;
-  late final Animation<double>   _pulseAnim;
-  late final Animation<double>   _entryAnim;
+  late final Animation<double> _pulseAnim;
+  late final Animation<double> _entryAnim;
 
   List<Receipt> get _filtered => widget.receipts.where((r) =>
-    (_cat == 'All' || r.category == _cat) &&
-    (r.store.toLowerCase().contains(_search.toLowerCase()) ||
-     r.category.toLowerCase().contains(_search.toLowerCase()))
-  ).toList();
+      (_cat == 'All' || r.category == _cat) &&
+      (r.store.toLowerCase().contains(_search.toLowerCase()) ||
+          r.category.toLowerCase().contains(_search.toLowerCase()))).toList();
 
   double get _thisMonth {
     final now = DateTime.now();
     return widget.receipts
         .where((r) {
-          try { return DateTime.parse(r.date).month == now.month; }
-          catch (_) { return false; }
+          try {
+            return DateTime.parse(r.date).month == now.month;
+          } catch (_) {
+            return false;
+          }
         })
         .fold(0.0, (sum, r) => sum + r.amount);
   }
 
   int get _warningCount => widget.receipts.where((r) {
-    final d = r.daysToWarranty;
-    return d != null && d > 0 && d <= 30;
-  }).length;
+        final d = r.daysToWarranty;
+        return d != null && d > 0 && d <= 30;
+      }).length;
 
   @override
   void initState() {
@@ -82,15 +81,14 @@ class _HomeScreenState extends State<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+    _pulseAnim = Tween<double>(begin: 0.3, end: 1.0)
+        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
     _entryCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..forward();
-    _entryAnim = CurvedAnimation(
-      parent: _entryCtrl, curve: Curves.easeOut);
+    _entryAnim = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
   }
 
   @override
@@ -116,29 +114,23 @@ class _HomeScreenState extends State<HomeScreen>
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-
-            // ── HERO CARD ────────────────────────────────────────────
             SliverToBoxAdapter(
               child: _HeroCard(
-                topPad:       topPad,
-                pulseAnim:    _pulseAnim,
-                receipts:     widget.receipts,
-                thisMonth:    _thisMonth,
+                topPad: topPad,
+                pulseAnim: _pulseAnim,
+                receipts: widget.receipts,
+                thisMonth: _thisMonth,
                 warningCount: _warningCount,
               ),
             ),
-
-            // ── LIVE EXCHANGE RATE BANNER (http + JSON) ───────────────
             SliverToBoxAdapter(
               child: _ExchangeRateBanner(
-                rate      : widget.exchangeRate,
-                loading   : widget.rateLoading,
-                error     : widget.rateError,
-                onRefresh : widget.onRefreshRate,
+                rate: widget.exchangeRate,
+                loading: widget.rateLoading,
+                error: widget.rateError,
+                onRefresh: widget.onRefreshRate,
               ),
             ),
-
-            // ── SEARCH + CHIPS + HEADING ─────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
@@ -161,8 +153,6 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
             ),
-
-            // ── RECEIPT CARDS ─────────────────────────────────────────
             _filtered.isEmpty
                 ? const SliverFillRemaining(
                     hasScrollBody: false,
@@ -175,8 +165,8 @@ class _HomeScreenState extends State<HomeScreen>
                         (ctx, i) => _AnimatedCard(
                           index: i,
                           child: ReceiptCard(
-                            receipt:  _filtered[i],
-                            onTap:    () => widget.onView(_filtered[i]),
+                            receipt: _filtered[i],
+                            onTap: () => widget.onView(_filtered[i]),
                             onDelete: () =>
                                 widget.onDelete(_filtered[i].id),
                           ),
@@ -192,9 +182,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HERO CARD
-// ─────────────────────────────────────────────────────────────────────────────
 class _HeroCard extends StatelessWidget {
   final double topPad;
   final Animation<double> pulseAnim;
@@ -218,7 +205,7 @@ class _HeroCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
-            end:   Alignment.bottomRight,
+            end: Alignment.bottomRight,
             stops: [0.0, 0.5, 1.0],
             colors: [Color(0xFF1A546B), _cerulean, _cyan],
           ),
@@ -236,9 +223,11 @@ class _HeroCard extends StatelessWidget {
           child: Stack(
             children: [
               Positioned(
-                top: -70, right: -50,
+                top: -70,
+                right: -50,
                 child: Container(
-                  width: 240, height: 240,
+                  width: 240,
+                  height: 240,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withOpacity(0.055),
@@ -246,9 +235,11 @@ class _HeroCard extends StatelessWidget {
                 ),
               ),
               Positioned(
-                bottom: -50, left: -40,
+                bottom: -50,
+                left: -40,
                 child: Container(
-                  width: 180, height: 180,
+                  width: 180,
+                  height: 180,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _vanilla.withOpacity(0.07),
@@ -273,7 +264,8 @@ class _HeroCard extends StatelessWidget {
                                 builder: (_, __) => Opacity(
                                   opacity: pulseAnim.value,
                                   child: Container(
-                                    width: 6, height: 6,
+                                    width: 6,
+                                    height: 6,
                                     margin: const EdgeInsets.only(
                                         right: 7, bottom: 1),
                                     decoration: const BoxDecoration(
@@ -284,11 +276,11 @@ class _HeroCard extends StatelessWidget {
                                 ),
                               ),
                               Text('Welcome back!!!',
-                                style: TextStyle(
-                                  color: _vanilla.withOpacity(0.78),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                )),
+                                  style: TextStyle(
+                                    color: _vanilla.withOpacity(0.78),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  )),
                             ]),
                             const SizedBox(height: 5),
                             RichText(
@@ -301,17 +293,20 @@ class _HeroCard extends StatelessWidget {
                                   height: 1.0,
                                 ),
                                 children: [
-                                  TextSpan(text: 'Resibo',
-                                    style: TextStyle(color: _white)),
-                                  TextSpan(text: 'Scan',
-                                    style: TextStyle(color: _vanilla)),
+                                  TextSpan(
+                                      text: 'Resibo',
+                                      style: TextStyle(color: _white)),
+                                  TextSpan(
+                                      text: 'Scan',
+                                      style: TextStyle(color: _vanilla)),
                                 ],
                               ),
                             ),
                           ],
                         ),
                         Container(
-                          width: 50, height: 50,
+                          width: 50,
+                          height: 50,
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.13),
                             borderRadius: BorderRadius.circular(16),
@@ -320,9 +315,15 @@ class _HeroCard extends StatelessWidget {
                               width: 1.2,
                             ),
                           ),
-                          child: const Center(
-                            child: Text('🧾',
-                              style: TextStyle(fontSize: 24))),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -358,17 +359,17 @@ class _HeroCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STAT TILE
-// ─────────────────────────────────────────────────────────────────────────────
 class _StatTile extends StatelessWidget {
   final String label, value, sub;
-  final Color  valueColor;
+  final Color valueColor;
   final double rightMargin;
 
   const _StatTile({
-    required this.label, required this.value, required this.sub,
-    required this.valueColor, required this.rightMargin,
+    required this.label,
+    required this.value,
+    required this.sub,
+    required this.valueColor,
+    required this.rightMargin,
   });
 
   @override
@@ -380,22 +381,30 @@ class _StatTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.10),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withOpacity(0.18), width: 1.0),
+          border:
+              Border.all(color: Colors.white.withOpacity(0.18), width: 1.0),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(
-              color: Colors.white.withOpacity(0.55),
-              fontSize: 10.5, letterSpacing: 0.2)),
+            Text(label,
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.55),
+                    fontSize: 10.5,
+                    letterSpacing: 0.2)),
             const SizedBox(height: 7),
-            Text(value, style: TextStyle(
-              fontFamily: 'Georgia', color: valueColor,
-              fontSize: 26, fontWeight: FontWeight.w900,
-              letterSpacing: -0.6, height: 1.0)),
+            Text(value,
+                style: TextStyle(
+                    fontFamily: 'Georgia',
+                    color: valueColor,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.6,
+                    height: 1.0)),
             const SizedBox(height: 3),
-            Text(sub, style: TextStyle(
-              color: Colors.white.withOpacity(0.36), fontSize: 10)),
+            Text(sub,
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.36), fontSize: 10)),
           ],
         ),
       ),
@@ -403,9 +412,6 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// WARNING BANNER
-// ─────────────────────────────────────────────────────────────────────────────
 class _WarningBanner extends StatelessWidget {
   final int count;
   const _WarningBanner({required this.count});
@@ -421,11 +427,13 @@ class _WarningBanner extends StatelessWidget {
       ),
       child: Row(children: [
         Container(
-          width: 30, height: 30,
+          width: 30,
+          height: 30,
           decoration: BoxDecoration(
-            color: _brick.withOpacity(0.28), shape: BoxShape.circle),
+              color: _brick.withOpacity(0.28), shape: BoxShape.circle),
           child: const Center(
-            child: Text('⚠️', style: TextStyle(fontSize: 13))),
+              child: Icon(Icons.warning_amber_rounded,
+                  color: _white, size: 16)),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -435,10 +443,12 @@ class _WarningBanner extends StatelessWidget {
               Text(
                 '$count ${count > 1 ? "warranties" : "warranty"} expiring soon!',
                 style: const TextStyle(
-                  color: _white, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    color: _white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700)),
               Text('Review before they expire',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.50), fontSize: 10.5)),
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.50), fontSize: 10.5)),
             ],
           ),
         ),
@@ -448,9 +458,6 @@ class _WarningBanner extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SEARCH BOX
-// ─────────────────────────────────────────────────────────────────────────────
 class _SearchBox extends StatelessWidget {
   final String value;
   final ValueChanged<String> onChange;
@@ -462,53 +469,57 @@ class _SearchBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: _white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(
-          color: _cerulean.withOpacity(0.09),
-          blurRadius: 18, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+              color: _cerulean.withOpacity(0.09),
+              blurRadius: 18,
+              offset: const Offset(0, 5))
+        ],
       ),
       child: TextField(
         onChanged: onChange,
         style: const TextStyle(
-          fontSize: 13.5, color: _inkMid, fontWeight: FontWeight.w500),
+            fontSize: 13.5, color: _inkMid, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: 'Search store or category...',
-          hintStyle: TextStyle(
-            color: _inkLight.withOpacity(0.65), fontSize: 13),
+          hintStyle:
+              TextStyle(color: _inkLight.withOpacity(0.65), fontSize: 13),
           prefixIcon: Container(
             margin: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: _cerulean.withOpacity(0.09),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.search_rounded,
-              color: _cerulean, size: 18),
+            child:
+                const Icon(Icons.search_rounded, color: _cerulean, size: 18),
           ),
           suffixIcon: Padding(
             padding: const EdgeInsets.only(right: 14),
             child: Icon(Icons.tune_rounded,
-              color: _inkLight.withOpacity(0.40), size: 18),
+                color: _inkLight.withOpacity(0.40), size: 18),
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 8, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         ),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CATEGORY CHIPS — real Material Icons, black color
-// ─────────────────────────────────────────────────────────────────────────────
 class _Chips extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelect;
   const _Chips({required this.selected, required this.onSelect});
 
-  // Uses catIcons from constants.dart — real icons, no emoji
   static const _labels = [
-    'All', 'Groceries', 'Food & Dining',
-    'Electronics', 'Utilities', 'Education', 'Others',
+    'All',
+    'Groceries',
+    'Food & Dining',
+    'Electronics',
+    'Utilities',
+    'Education',
+    'Others',
   ];
 
   @override
@@ -521,8 +532,8 @@ class _Chips extends StatelessWidget {
         itemCount: _labels.length,
         itemBuilder: (_, i) {
           final label = _labels[i];
-          final icon  = catIcons[label] ?? Icons.category_rounded;
-          final sel   = selected == label;
+          final icon = catIcons[label] ?? Icons.category_rounded;
+          final sel = selected == label;
 
           return GestureDetector(
             onTap: () => onSelect(label),
@@ -539,32 +550,33 @@ class _Chips extends StatelessWidget {
                   width: sel ? 0 : 1.5,
                 ),
                 boxShadow: sel
-                    ? [BoxShadow(
-                        color: _cerulean.withOpacity(0.28),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4))]
-                    : [BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2))],
+                    ? [
+                        BoxShadow(
+                            color: _cerulean.withOpacity(0.28),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4))
+                      ]
+                    : [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2))
+                      ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    icon,
-                    size: 15,
-                    // black when unselected, white when selected
-                    color: sel ? _white : Colors.black,
-                  ),
+                  Icon(icon,
+                      size: 15, color: sel ? _white : Colors.black),
                   const SizedBox(width: 6),
                   Text(label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                      color: sel ? _white : _inkMid,
-                      letterSpacing: 0.1,
-                    )),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight:
+                            sel ? FontWeight.w700 : FontWeight.w500,
+                        color: sel ? _white : _inkMid,
+                        letterSpacing: 0.1,
+                      )),
                 ],
               ),
             ),
@@ -575,9 +587,6 @@ class _Chips extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION LABEL
-// ─────────────────────────────────────────────────────────────────────────────
 class _SectionLabel extends StatelessWidget {
   final int count;
   const _SectionLabel({required this.count});
@@ -589,37 +598,40 @@ class _SectionLabel extends StatelessWidget {
       children: [
         Row(children: [
           Container(
-            width: 4, height: 20,
+            width: 4,
+            height: 20,
             margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
-              color: _sandy, borderRadius: BorderRadius.circular(2)),
+                color: _sandy, borderRadius: BorderRadius.circular(2)),
           ),
           const Text('Recent Receipts',
-            style: TextStyle(
-              fontFamily: 'Georgia', fontSize: 17,
-              fontWeight: FontWeight.w700, color: _ink,
-              letterSpacing: -0.3)),
+              style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: _ink,
+                  letterSpacing: -0.3)),
         ]),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
             color: _vanillaSoft,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: _vanilla, width: 1.5),
           ),
           child: Text('$count found',
-            style: const TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w700,
-              color: _cerulean, letterSpacing: 0.2)),
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: _cerulean,
+                  letterSpacing: 0.2)),
         ),
       ],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ANIMATED CARD
-// ─────────────────────────────────────────────────────────────────────────────
 class _AnimatedCard extends StatelessWidget {
   final int index;
   final Widget child;
@@ -643,9 +655,6 @@ class _AnimatedCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// EMPTY STATE
-// ─────────────────────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -656,61 +665,68 @@ class _EmptyState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 78, height: 78,
+            width: 78,
+            height: 78,
             decoration: BoxDecoration(
               color: _vanillaSoft,
               shape: BoxShape.circle,
               border: Border.all(
-                color: _sandy.withOpacity(0.30), width: 1.5),
-              boxShadow: [BoxShadow(
-                color: _vanilla.withOpacity(0.6),
-                blurRadius: 22, spreadRadius: 4)],
+                  color: _sandy.withOpacity(0.30), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                    color: _vanilla.withOpacity(0.6),
+                    blurRadius: 22,
+                    spreadRadius: 4)
+              ],
             ),
             child: const Center(
-              child: Text('🧾', style: TextStyle(fontSize: 28))),
+              child: Icon(Icons.receipt_long_outlined,
+                  color: _cerulean, size: 32),
+            ),
           ),
           const SizedBox(height: 16),
           const Text('No receipts found',
-            style: TextStyle(
-              fontFamily: 'Georgia', fontSize: 16,
-              fontWeight: FontWeight.w700, color: _inkMid)),
+              style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: _inkMid)),
           const SizedBox(height: 6),
           Text('Try a different filter or scan a new receipt',
-            style: TextStyle(
-              fontSize: 12.5, color: _inkLight.withOpacity(0.8))),
+              style:
+                  TextStyle(fontSize: 12.5, color: _inkLight.withOpacity(0.8))),
           const SizedBox(height: 24),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
               color: _cerulean,
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [BoxShadow(
-                color: _cerulean.withOpacity(0.28),
-                blurRadius: 14, offset: const Offset(0, 5))],
+              boxShadow: [
+                BoxShadow(
+                    color: _cerulean.withOpacity(0.28),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5))
+              ],
             ),
             child: const Text('Scan a Receipt',
-              style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w700,
-                color: _white, letterSpacing: 0.2)),
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _white,
+                    letterSpacing: 0.2)),
           ),
         ],
       ),
     );
   }
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// EXCHANGE RATE BANNER
-// Displays live PHP-based currency rates fetched via the `http` package and
-// parsed from JSON into a typed [ExchangeRate] model.
-// ─────────────────────────────────────────────────────────────────────────────
+
 class _ExchangeRateBanner extends StatelessWidget {
   final ExchangeRate? rate;
-  final bool          loading;
-  final String?       error;
+  final bool loading;
+  final String? error;
   final VoidCallback? onRefresh;
 
-  // Which currencies to highlight in the banner
   static const _highlight = ['USD', 'EUR', 'JPY', 'GBP', 'SGD'];
 
   const _ExchangeRateBanner({
@@ -740,18 +756,19 @@ class _ExchangeRateBanner extends StatelessWidget {
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header row ──────────────────────────────────────────────
             Row(
               children: [
-                const Text('💱', style: TextStyle(fontSize: 16)),
+                const Icon(Icons.currency_exchange_rounded,
+                    color: _vanilla, size: 16),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'Live Exchange Rates · PHP base',
+                    'Live Exchange Rates  PHP base',
                     style: TextStyle(
                       color: _white,
                       fontSize: 12.5,
@@ -760,7 +777,6 @@ class _ExchangeRateBanner extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Refresh button
                 if (onRefresh != null && !loading)
                   GestureDetector(
                     onTap: onRefresh,
@@ -769,7 +785,8 @@ class _ExchangeRateBanner extends StatelessWidget {
                   ),
                 if (loading)
                   const SizedBox(
-                    width: 14, height: 14,
+                    width: 14,
+                    height: 14,
                     child: CircularProgressIndicator(
                       strokeWidth: 1.8,
                       color: _vanilla,
@@ -778,8 +795,6 @@ class _ExchangeRateBanner extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-
-            // ── Content ─────────────────────────────────────────────────
             if (loading && rate == null)
               _shimmer()
             else if (error != null && rate == null)
@@ -788,8 +803,6 @@ class _ExchangeRateBanner extends StatelessWidget {
               _ratesRow(rate!)
             else
               _shimmer(),
-
-            // ── Last-updated label ───────────────────────────────────
             if (rate != null) ...[
               const SizedBox(height: 10),
               Text(
@@ -807,7 +820,6 @@ class _ExchangeRateBanner extends StatelessWidget {
     );
   }
 
-  // ── Rate pills ───────────────────────────────────────────────────────────
   Widget _ratesRow(ExchangeRate rate) {
     final pairs = _highlight
         .map((c) => MapEntry(c, rate.rateFor(c)))
@@ -817,73 +829,68 @@ class _ExchangeRateBanner extends StatelessWidget {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: pairs.map((e) => _RatePill(
-        currency : e.key,
-        rate     : e.value!,
-      )).toList(),
+      children: pairs
+          .map((e) => _RatePill(currency: e.key, rate: e.value!))
+          .toList(),
     );
   }
 
-  // ── Skeleton shimmer ─────────────────────────────────────────────────────
   Widget _shimmer() => Wrap(
-    spacing: 8,
-    children: List.generate(5, (i) => Container(
-      width: 64, height: 38,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(10),
-      ),
-    )),
-  );
-
-  // ── Error row ────────────────────────────────────────────────────────────
-  Widget _errorRow() => Row(
-    children: [
-      Icon(Icons.wifi_off_rounded,
-          size: 15, color: _vanilla.withOpacity(0.55)),
-      const SizedBox(width: 6),
-      Expanded(
-        child: Text(
-          error ?? 'Could not load rates.',
-          style: TextStyle(
-            color: _vanilla.withOpacity(0.60),
-            fontSize: 11.5,
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      if (onRefresh != null)
-        GestureDetector(
-          onTap: onRefresh,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        spacing: 8,
+        children: List.generate(
+          5,
+          (i) => Container(
+            width: 64,
+            height: 38,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
+              color: Colors.white.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Text('Retry',
-                style: TextStyle(
-                  color: _vanilla.withOpacity(0.85),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600)),
           ),
         ),
-    ],
-  );
+      );
 
-  // ── Date helper ──────────────────────────────────────────────────────────
+  Widget _errorRow() => Row(
+        children: [
+          Icon(Icons.wifi_off_rounded,
+              size: 15, color: _vanilla.withOpacity(0.55)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              error ?? 'Could not load rates.',
+              style: TextStyle(
+                  color: _vanilla.withOpacity(0.60), fontSize: 11.5),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (onRefresh != null)
+            GestureDetector(
+              onTap: onRefresh,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('Retry',
+                    style: TextStyle(
+                        color: _vanilla.withOpacity(0.85),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
+              ),
+            ),
+        ],
+      );
+
   String _shortDate(String utc) {
-    // e.g. "Wed, 18 Mar 2026 00:02:31 +0000" → "18 Mar 2026"
     final parts = utc.split(' ');
     if (parts.length >= 4) return '${parts[1]} ${parts[2]} ${parts[3]}';
     return utc;
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// RATE PILL
-// ─────────────────────────────────────────────────────────────────────────────
 class _RatePill extends StatelessWidget {
   final String currency;
   final double rate;
@@ -897,7 +904,8 @@ class _RatePill extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.10),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
+        border:
+            Border.all(color: Colors.white.withOpacity(0.12), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
