@@ -33,7 +33,8 @@ final _receiptIcons = <Map<String, String>>[
 
 class ScanModal extends StatefulWidget {
   final ValueChanged<Receipt> onSave;
-  const ScanModal({super.key, required this.onSave});
+  final Receipt? existing;
+  const ScanModal({super.key, required this.onSave, this.existing});
 
   @override
   State<ScanModal> createState() => _ScanModalState();
@@ -41,15 +42,15 @@ class ScanModal extends StatefulWidget {
 
 class _ScanModalState extends State<ScanModal>
     with SingleTickerProviderStateMixin {
-  String _step     = 'choose';
-  String _store    = '';
-  String _amount   = '';
-  String _notes    = '';
-  String _warranty = '';
-  String _date     = DateTime.now().toIso8601String().split('T')[0];
-  String _category = 'Grocery';
-  String _folder   = 'Personal';
-  String _image    = '$_imgBase/1.svg';
+  late String _step;
+  late String _store;
+  late String _amount;
+  late String _notes;
+  late String _warranty;
+  late String _date;
+  late String _category;
+  late String _folder;
+  late String _image;
   XFile?       _pickedXFile;
   Uint8List?   _pickedBytes;
   String?      _pickedPath;
@@ -64,6 +65,21 @@ class _ScanModalState extends State<ScanModal>
   @override
   void initState() {
     super.initState();
+    final e = widget.existing;
+    // Pre-fill from existing receipt if editing
+    _step     = e != null ? 'form' : 'choose';
+    _store    = e?.store    ?? '';
+    _amount   = e != null ? e.amount.toStringAsFixed(2) : '';
+    _notes    = e?.notes    ?? '';
+    _warranty = e?.warranty ?? '';
+    _date     = e?.date     ?? DateTime.now().toIso8601String().split('T')[0];
+    _category = e?.category ?? 'Grocery';
+    _folder   = e?.folder   ?? 'Personal';
+    _image    = e?.image.startsWith('assets/') == true
+                  ? e!.image
+                  : '$_imgBase/1.svg';
+    _pickedBytes = e?.imageBytes;
+
     _slideCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 320),
@@ -82,6 +98,13 @@ class _ScanModalState extends State<ScanModal>
 
   void _goToForm()   { setState(() => _step = 'form');   _slideCtrl..reset()..forward(); }
   void _goToChoose() { setState(() => _step = 'choose'); _slideCtrl..reset()..forward(); }
+
+  // Returns true if bytes are an SVG file (starts with '<')
+  bool _isSvgBytes(Uint8List bytes) {
+    if (bytes.length < 5) return false;
+    final prefix = String.fromCharCodes(bytes.take(5));
+    return prefix.trimLeft().startsWith('<');
+  }
 
   Future<void> _pickFromGallery() async {
     try {
@@ -166,7 +189,7 @@ class _ScanModalState extends State<ScanModal>
     // ── Save ────────────────────────────────────────────────────────────────
     try {
       widget.onSave(Receipt(
-        id         : DateTime.now().millisecondsSinceEpoch,
+        id         : widget.existing?.id ?? DateTime.now().millisecondsSinceEpoch,
         store      : _store.trim(),
         amount     : double.parse(_amount.trim()),
         date       : _date,
@@ -196,6 +219,7 @@ class _ScanModalState extends State<ScanModal>
     String? hint,
     bool optional = false,
     String? errorText,
+    String? initialValue,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,13 +241,13 @@ class _ScanModalState extends State<ScanModal>
           ],
         ]),
         const SizedBox(height: 7),
-        TextField(
+        TextFormField(
+          initialValue: initialValue,
           onChanged: (v) {
             onChanged(v);
-            // Clear error as soon as user types
             if (errorText != null) {
               setState(() {
-                if (label.contains('Store')) _storeError  = null;
+                if (label.contains('Store'))  _storeError  = null;
                 if (label.contains('Amount')) _amountError = null;
               });
             }
@@ -256,9 +280,7 @@ class _ScanModalState extends State<ScanModal>
                 width: 1.8),
             ),
             filled: true,
-            fillColor: errorText != null
-                ? Colors.red.shade50
-                : _white,
+            fillColor: errorText != null ? Colors.red.shade50 : _white,
           ),
         ),
         if (errorText != null) ...[
@@ -399,10 +421,12 @@ class _ScanModalState extends State<ScanModal>
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text('Receipt Details', style: TextStyle(
-                        fontFamily: 'Georgia', fontSize: 20,
-                        fontWeight: FontWeight.w900, color: _ink,
-                        letterSpacing: -0.4)),
+                      Text(
+                        widget.existing != null ? 'Edit Receipt' : 'Receipt Details',
+                        style: const TextStyle(
+                          fontFamily: 'Georgia', fontSize: 20,
+                          fontWeight: FontWeight.w900, color: _ink,
+                          letterSpacing: -0.4)),
                     ]),
 
                     const SizedBox(height: 20),
@@ -421,7 +445,13 @@ class _ScanModalState extends State<ScanModal>
                           final asset = _receiptIcons[i]['asset']!;
                           final sel   = _image == asset;
                           return GestureDetector(
-                            onTap: () => setState(() => _image = asset),
+                            onTap: () => setState(() {
+                              _image = asset;
+                              // Clear any attached image so the chosen icon shows
+                              _pickedXFile = null;
+                              _pickedBytes = null;
+                              _pickedPath  = null;
+                            }),
                             child: _IconPickerTile(asset: asset, selected: sel),
                           );
                         },
@@ -547,12 +577,19 @@ class _ScanModalState extends State<ScanModal>
                         borderRadius: BorderRadius.circular(14),
                         child: Stack(
                           children: [
-                            Image.memory(
-                              _pickedBytes!,
-                              height: 160,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
+                            _isSvgBytes(_pickedBytes!)
+                              ? SvgPicture.memory(
+                                  _pickedBytes!,
+                                  height: 160,
+                                  width: double.infinity,
+                                  fit: BoxFit.contain,
+                                )
+                              : Image.memory(
+                                  _pickedBytes!,
+                                  height: 160,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
                             Positioned(
                               top: 8, right: 8,
                               child: GestureDetector(
@@ -596,18 +633,22 @@ class _ScanModalState extends State<ScanModal>
                     _field('Store / Merchant *',
                       (v) => setState(() => _store = v),
                       hint: 'e.g. SM Supermarket',
-                      errorText: _storeError),
+                      errorText: _storeError,
+                      initialValue: _store.isEmpty ? null : _store),
                     _field('Amount (PHP) *',
                       (v) => setState(() => _amount = v),
                       type: TextInputType.number,
                       hint: '0.00',
-                      errorText: _amountError),
+                      errorText: _amountError,
+                      initialValue: _amount.isEmpty ? null : _amount),
                     _field('Warranty Date',
                       (v) => setState(() => _warranty = v),
-                      hint: 'YYYY-MM-DD', optional: true),
+                      hint: 'YYYY-MM-DD', optional: true,
+                      initialValue: _warranty.isEmpty ? null : _warranty),
                     _field('Notes',
                       (v) => setState(() => _notes = v),
-                      optional: true),
+                      optional: true,
+                      initialValue: _notes.isEmpty ? null : _notes),
 
                     // ── Category chips ─────────────────────────────
                     _SectionLabel(label: 'Category'),
@@ -731,13 +772,13 @@ class _ScanModalState extends State<ScanModal>
                             blurRadius: 16,
                             offset: const Offset(0, 6))],
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.save_alt_rounded,
+                            Icon(widget.existing != null ? Icons.edit_outlined : Icons.save_alt_rounded,
                               color: _white, size: 18),
-                            SizedBox(width: 8),
-                            Text('Save Receipt', style: TextStyle(
+                            const SizedBox(width: 8),
+                            Text(widget.existing != null ? 'Update Receipt' : 'Save Receipt', style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w800,
                               color: _white, letterSpacing: 0.2)),
                           ],

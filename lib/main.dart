@@ -318,8 +318,9 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     setState(() => _receiptsLoading = true);
     await Future.delayed(const Duration(milliseconds: 1200));
     if (mounted) {
+      final imgBytes = await loadReceiptSvgBytes();
       setState(() {
-        _receipts = seedReceipts.map(Receipt.fromMap).toList();
+        _receipts = buildSeedReceipts(imgBytes).map(Receipt.fromMap).toList();
         _receiptsLoading = false;
       });
     }
@@ -389,16 +390,39 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
   void _addReceipt(Receipt r) => setState(() => _receipts.insert(0, r));
 
+  void _editReceipt(Receipt updated) {
+    setState(() {
+      final idx = _receipts.indexWhere((r) => r.id == updated.id);
+      if (idx != -1) _receipts[idx] = updated;
+    });
+  }
+
   void _viewReceipt(Receipt r) {
     Navigator.pushNamed(
       context,
       AppRoutes.receiptDetail,
       arguments: ReceiptDetailArgs(
-        receipt: r,
-        onBack: () => Navigator.pop(context),
+        receipt:  r,
+        onBack:   () => Navigator.pop(context),
         onDelete: (id) {
           _delReceipt(id);
           Navigator.pop(context);
+        },
+        onEdit: (receipt) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            useRootNavigator: true,
+            builder: (_) => ScanModal(
+              existing: receipt,
+              onSave: (updated) {
+                _editReceipt(updated);
+                // Pop the detail screen so user sees updated receipt in list
+                Navigator.pop(context);
+              },
+            ),
+          );
         },
       ),
     );

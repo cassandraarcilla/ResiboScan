@@ -69,15 +69,16 @@ class Receipt {
   }
 
   factory Receipt.fromMap(Map<String, dynamic> m) => Receipt(
-    id       : m['id'],
-    store    : m['store'],
-    amount   : (m['amount'] as num).toDouble(),
-    date     : m['date'],
-    category : m['category'],
-    warranty : m['warranty'],
-    image    : m['image'],
-    folder   : m['folder'],
-    notes    : m['notes'] ?? '',
+    id         : m['id'],
+    store      : m['store'],
+    amount     : (m['amount'] as num).toDouble(),
+    date       : m['date'],
+    category   : m['category'],
+    warranty   : m['warranty'],
+    image      : m['image'],
+    folder     : m['folder'],
+    notes      : m['notes'] ?? '',
+    imageBytes : m['imageBytes'] as Uint8List?,
   );
 
   // ── fromJson — Milestone 3 ────────────────────────────────────────────────

@@ -24,11 +24,13 @@ class ReceiptDetailArgs {
   final Receipt       receipt;
   final VoidCallback  onBack;
   final ValueChanged<int> onDelete;
+  final ValueChanged<Receipt>? onEdit;
 
   const ReceiptDetailArgs({
     required this.receipt,
     required this.onBack,
     required this.onDelete,
+    this.onEdit,
   });
 }
 
@@ -50,6 +52,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           receipt:  args.receipt,
           onBack:   args.onBack,
           onDelete: args.onDelete,
+          onEdit:   args.onEdit,
         ),
         settings,
       );

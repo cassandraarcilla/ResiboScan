@@ -1,7 +1,14 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/receipt_model.dart';
 import '../utils/constants.dart';
+
+// Detect SVG vs raster bytes
+bool _isSvg(Uint8List bytes) {
+  if (bytes.length < 5) return false;
+  return String.fromCharCodes(bytes.take(5)).trimLeft().startsWith('<');
+}
 
 // Safe SVG loader — only uses SvgPicture.asset for actual asset paths
 Widget _safeCardIcon(String imagePath, double size, Color fallbackColor) {
@@ -102,7 +109,7 @@ class ReceiptCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // If a photo was attached, show it as a small overlay
+                  // Show receipt image as small overlay (SVG or raster)
                   if (receipt.imageBytes != null)
                     Positioned(
                       right: 0, bottom: 0,
@@ -111,12 +118,12 @@ class ReceiptCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: _white, width: 1.5),
+                          color: _white,
                         ),
                         child: ClipOval(
-                          child: Image.memory(
-                            receipt.imageBytes!,
-                            fit: BoxFit.cover,
-                          ),
+                          child: _isSvg(receipt.imageBytes!)
+                            ? SvgPicture.memory(receipt.imageBytes!, fit: BoxFit.cover)
+                            : Image.memory(receipt.imageBytes!, fit: BoxFit.cover),
                         ),
                       ),
                     ),

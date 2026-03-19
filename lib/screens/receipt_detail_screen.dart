@@ -1,7 +1,15 @@
+import 'dart:convert';
 import 'dart:typed_data';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/receipt_model.dart';
+
+bool _isSvg(Uint8List bytes) {
+  if (bytes.length < 5) return false;
+  return String.fromCharCodes(bytes.take(5)).trimLeft().startsWith('<');
+}
 
 // ── Safe SVG icon: only loads asset paths starting with "assets/" ─────────────
 Widget _safeIcon(String imagePath, double size, Color fallbackColor) {
@@ -43,12 +51,14 @@ class ReceiptDetailScreen extends StatelessWidget {
   final Receipt receipt;
   final VoidCallback onBack;
   final ValueChanged<int> onDelete;
+  final ValueChanged<Receipt>? onEdit;
 
   const ReceiptDetailScreen({
     super.key,
     required this.receipt,
     required this.onBack,
     required this.onDelete,
+    this.onEdit,
   });
 
   @override
@@ -284,10 +294,10 @@ class ReceiptDetailScreen extends StatelessWidget {
                 Row(children: [
                   Expanded(
                     child: _ActionButton(
-                      icon : Icons.cloud_upload_outlined,
-                      label: 'Backup',
+                      icon : Icons.edit_outlined,
+                      label: 'Edit',
                       color: _cerulean,
-                      onTap: () {},
+                      onTap: () => onEdit?.call(receipt),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -296,7 +306,7 @@ class ReceiptDetailScreen extends StatelessWidget {
                       icon : Icons.download_outlined,
                       label: 'Export',
                       color: _sandy,
-                      onTap: () {},
+                      onTap: () => _exportCsv(context, receipt),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -307,6 +317,48 @@ class ReceiptDetailScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSV EXPORT — triggers a browser download
+// ─────────────────────────────────────────────────────────────────────────────
+void _exportCsv(BuildContext context, Receipt r) {
+  try {
+    final rows = [
+      ['Field', 'Value'],
+      ['Store',    r.store],
+      ['Amount',   r.formattedAmount],
+      ['Date',     r.formattedDate],
+      ['Category', r.category],
+      ['Folder',   r.folder],
+      ['Notes',    r.notes.isEmpty ? '—' : r.notes],
+      ['Warranty', r.warranty ?? '—'],
+    ];
+
+    final csv = rows.map((row) =>
+      row.map((cell) => '"${cell.replaceAll('"', '""')}"').join(',')
+    ).join('\n');
+
+    final bytes  = utf8.encode(csv);
+    final blob   = html.Blob([bytes], 'text/csv');
+    final url    = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', '${r.store.replaceAll(' ', '_')}_receipt.csv')
+      ..click();
+    html.Url.revokeObjectUrl(url);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Exported ${r.store} receipt as CSV'),
+        backgroundColor: const Color(0xFF2D728F),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red.shade700),
     );
   }
 }
@@ -347,36 +399,39 @@ class _ReceiptImageCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
 
-              // ── Background: photo or centred SVG ─────────────────
+              // ── Background: receipt image (SVG or raster) ────────
               if (hasPhoto)
-                Image.memory(
-                  receipt.imageBytes!,
-                  fit: BoxFit.cover,
-                )
+                _isSvg(receipt.imageBytes!)
+                  ? SvgPicture.memory(
+                      receipt.imageBytes!,
+                      fit: BoxFit.contain,
+                    )
+                  : Image.memory(
+                      receipt.imageBytes!,
+                      fit: BoxFit.cover,
+                    )
               else
                 Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      ClipOval(
-                        child: SvgPicture.asset(
-                          receipt.image.startsWith('assets/')
-                              ? receipt.image
-                              : 'assets/images/8.svg',
-                          width: 90, height: 90,
-                          fit: BoxFit.cover,
-                          placeholderBuilder: (_) => Container(
-                            width: 90, height: 90,
-                            decoration: const BoxDecoration(
-                              color: Color(0x1A7A9BAA),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.receipt_rounded,
-                              size: 36, color: _inkLight),
+                      SvgPicture.asset(
+                        receipt.image.startsWith('assets/')
+                            ? receipt.image
+                            : 'assets/images/8.svg',
+                        width: 140, height: 140,
+                        fit: BoxFit.contain,
+                        placeholderBuilder: (_) => Container(
+                          width: 140, height: 140,
+                          decoration: const BoxDecoration(
+                            color: Color(0x1A7A9BAA),
+                            shape: BoxShape.circle,
                           ),
+                          child: const Icon(Icons.receipt_rounded,
+                            size: 56, color: _inkLight),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 4),
@@ -492,13 +547,15 @@ class _ZoomViewer {
           height: size.height,
           child: Stack(
             children: [
-              // ── Zoomable image ──────────────────────────────────
+              // ── Zoomable image (SVG or raster) ──────────────────
               Positioned.fill(
                 child: InteractiveViewer(
                   minScale: 0.5,
                   maxScale: 5.0,
                   child: Center(
-                    child: Image.memory(bytes, fit: BoxFit.contain),
+                    child: _isSvg(bytes)
+                      ? SvgPicture.memory(bytes, fit: BoxFit.contain)
+                      : Image.memory(bytes, fit: BoxFit.contain),
                   ),
                 ),
               ),

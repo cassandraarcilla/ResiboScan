@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // Colors
 const Color cBg        = Color(0xFFF7F5F2);
@@ -41,12 +43,22 @@ const Map<String, IconData> catIcons = {
   'Others'       : Icons.category_rounded,
 };
 
-// Seed receipts — image now points to SVG assets
-final List<Map<String, dynamic>> seedReceipts = [
-  { 'id': 1, 'store': 'SM Supermarket',     'amount': 1250.75, 'date': '2026-02-28', 'category': 'Groceries',     'warranty': null,         'image': 'assets/images/1.svg', 'folder': 'Personal', 'notes': 'Weekly groceries' },
-  { 'id': 2, 'store': 'Jollibee',           'amount': 320.00,  'date': '2026-03-01', 'category': 'Food & Dining', 'warranty': null,         'image': 'assets/images/2.svg', 'folder': 'Personal', 'notes': 'Family meal' },
-  { 'id': 3, 'store': 'Samsung Service',    'amount': 4500.00, 'date': '2026-01-15', 'category': 'Electronics',   'warranty': '2027-01-15', 'image': 'assets/images/3.svg', 'folder': 'Work',     'notes': 'Phone repair' },
-  { 'id': 4, 'store': 'Meralco',            'amount': 2100.00, 'date': '2026-03-05', 'category': 'Utilities',     'warranty': null,         'image': 'assets/images/4.svg', 'folder': 'Personal', 'notes': 'Electric bill' },
-  { 'id': 5, 'store': 'National Bookstore', 'amount': 875.50,  'date': '2026-02-20', 'category': 'Education',     'warranty': null,         'image': 'assets/images/5.svg', 'folder': 'Work',     'notes': 'Office supplies' },
-  { 'id': 6, 'store': 'Lazada',             'amount': 3200.00, 'date': '2026-02-10', 'category': 'Electronics',   'warranty': '2027-02-10', 'image': 'assets/images/3.svg', 'folder': 'Personal', 'notes': 'Keyboard' },
+// ── Receipt SVG asset loaded as bytes (used as imageBytes for seed data) ──────
+const String receiptSvgPath = 'assets/images/receipt.svg';
+
+Uint8List? _receiptSvgBytes;
+Future<Uint8List> loadReceiptSvgBytes() async {
+  _receiptSvgBytes ??= (await rootBundle.load(receiptSvgPath)).buffer.asUint8List();
+  return _receiptSvgBytes!;
+}
+
+// Seed receipts — imageBytes loaded async via initSeedReceipts()
+List<Map<String, dynamic>> buildSeedReceipts(Uint8List imgBytes) => [
+  { 'id': 1, 'store': 'SM Supermarket',     'amount': 1250.75, 'date': '2026-02-28', 'category': 'Groceries',     'warranty': null,         'image': 'assets/images/1.svg', 'folder': 'Personal', 'notes': 'Weekly groceries',    'imageBytes': imgBytes },
+  { 'id': 2, 'store': 'Jollibee',           'amount': 320.00,  'date': '2026-03-01', 'category': 'Food & Dining', 'warranty': null,         'image': 'assets/images/2.svg', 'folder': 'Personal', 'notes': 'Family meal',          'imageBytes': imgBytes },
+  { 'id': 3, 'store': 'Samsung Service',    'amount': 4500.00, 'date': '2026-01-15', 'category': 'Electronics',   'warranty': '2027-01-15', 'image': 'assets/images/3.svg', 'folder': 'Work',     'notes': 'Phone repair',         'imageBytes': imgBytes },
+  { 'id': 4, 'store': 'Meralco',            'amount': 2100.00, 'date': '2026-03-05', 'category': 'Utilities',     'warranty': null,         'image': 'assets/images/4.svg', 'folder': 'Personal', 'notes': 'Electric bill',        'imageBytes': imgBytes },
+  { 'id': 5, 'store': 'National Bookstore', 'amount': 875.50,  'date': '2026-02-20', 'category': 'Education',     'warranty': null,         'image': 'assets/images/5.svg', 'folder': 'Work',     'notes': 'Office supplies',      'imageBytes': imgBytes },
+  { 'id': 6, 'store': 'Lazada',             'amount': 3200.00, 'date': '2026-02-10', 'category': 'Electronics',   'warranty': '2027-02-10', 'image': 'assets/images/3.svg', 'folder': 'Personal', 'notes': 'Keyboard',             'imageBytes': imgBytes },
+  { 'id': 7, 'store': 'Bike Shop',          'amount': 154.06,  'date': '2026-03-19', 'category': 'Others',        'warranty': null,         'image': 'assets/images/8.svg', 'folder': 'Personal', 'notes': 'Brake cables + labor', 'imageBytes': imgBytes },
 ];
