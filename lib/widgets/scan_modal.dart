@@ -108,6 +108,12 @@ class _ScanModalState extends State<ScanModal>
       
       final bytes = await pickedFile.readAsBytes();
       
+      setState(() {
+        _pickedXFile = pickedFile;
+        _pickedBytes = bytes;
+        _pickedPath  = pickedFile.path;
+      });
+      
       try {
         final result = await ApiService.scanReceiptOcr(bytes);
         if (result['store'] != null && result['store'].toString().isNotEmpty) {
@@ -136,6 +142,12 @@ class _ScanModalState extends State<ScanModal>
       if (pickedFile == null) return;
       
       final bytes = await pickedFile.readAsBytes();
+      
+      setState(() {
+        _pickedXFile = pickedFile;
+        _pickedBytes = bytes;
+        _pickedPath  = pickedFile.path;
+      });
       
       try {
         final result = await ApiService.scanReceiptOcr(bytes);
