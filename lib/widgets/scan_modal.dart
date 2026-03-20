@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/api_service.dart';
 import '../models/receipt_model.dart';
 import '../utils/constants.dart';
 
@@ -98,6 +99,64 @@ class _ScanModalState extends State<ScanModal>
 
   void _goToForm()   { setState(() => _step = 'form');   _slideCtrl..reset()..forward(); }
   void _goToChoose() { setState(() => _step = 'choose'); _slideCtrl..reset()..forward(); }
+
+  Future<void> _pickFromCamera() async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.camera);
+      if (pickedFile == null) return;
+      
+      final bytes = await pickedFile.readAsBytes();
+      
+      try {
+        final result = await ApiService.scanReceiptOcr(bytes);
+        if (result['store'] != null && result['store'].toString().isNotEmpty) {
+          setState(() => _store = result['store'].toString());
+        }
+        if (result['amount'] != null && result['amount'].toString().isNotEmpty) {
+          setState(() => _amount = result['amount'].toString());
+        }
+        if (result['date'] != null && result['date'].toString().isNotEmpty) {
+          setState(() => _date = result['date'].toString());
+        }
+      } catch (e) {
+        // OCR failed, ignore
+      }
+      
+      _goToForm();
+    } catch (e) {
+      _goToForm();
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile == null) return;
+      
+      final bytes = await pickedFile.readAsBytes();
+      
+      try {
+        final result = await ApiService.scanReceiptOcr(bytes);
+        if (result['store'] != null && result['store'].toString().isNotEmpty) {
+          setState(() => _store = result['store'].toString());
+        }
+        if (result['amount'] != null && result['amount'].toString().isNotEmpty) {
+          setState(() => _amount = result['amount'].toString());
+        }
+        if (result['date'] != null && result['date'].toString().isNotEmpty) {
+          setState(() => _date = result['date'].toString());
+        }
+      } catch (e) {
+        // OCR failed, ignore
+      }
+      
+      _goToForm();
+    } catch (e) {
+      _goToForm();
+    }
+  }
 
   // Returns true if bytes are an SVG file (starts with '<')
   bool _isSvgBytes(Uint8List bytes) {
@@ -373,7 +432,7 @@ class _ScanModalState extends State<ScanModal>
                       icon: Icons.camera_alt_outlined,
                       label: 'Scan with Camera',
                       sub: 'Use your camera to capture a receipt',
-                      accent: _cerulean, onTap: _goToForm,
+                      accent: _cerulean, onTap: _pickFromCamera,
                     ),
                     const SizedBox(height: 10),
                     _ChoiceOption(

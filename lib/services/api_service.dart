@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -33,6 +34,27 @@ class ApiService {
 
     final raw = await _get(url);
     return ExchangeRate.fromJson(raw);
+  }
+
+  static Future<Map<String, dynamic>> scanReceiptOcr(Uint8List imageBytes) async {
+    final String base64Image = base64Encode(imageBytes);
+    final url = Uri.parse('http://YOUR_SERVER_IP:5000/scan');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'image_base64': base64Image}),
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        throw ApiException('Failed to scan receipt. HTTP Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw ApiException('OCR Request failed: $e');
+    }
   }
 
   // ── Low-level GET ──────────────────────────────────────────────────────────
