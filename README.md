@@ -1,4 +1,3 @@
-Here’s your updated **README-style section** with **Milestone 2 and 3 added**, keeping it clean and consistent:
 
 ---
 
