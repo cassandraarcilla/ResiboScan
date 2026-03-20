@@ -11,6 +11,7 @@ import 'screens/expenses_screen.dart';
 import 'screens/alerts_screen.dart';
 import 'widgets/bottom_nav.dart';
 import 'widgets/scan_modal.dart';
+import 'services/database_service.dart';
 
 const _cerulean = Color(0xFF2D728F);
 const _cyan     = Color(0xFF3B8EA5);
@@ -316,11 +317,10 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
   Future<void> _loadReceipts() async {
     setState(() => _receiptsLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
     if (mounted) {
-      final imgBytes = await loadReceiptSvgBytes();
+      final receipts = await DatabaseService.instance.getAllReceipts();
       setState(() {
-        _receipts = buildSeedReceipts(imgBytes).map(Receipt.fromMap).toList();
+        _receipts = receipts;
         _receiptsLoading = false;
       });
     }
@@ -378,8 +378,10 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     _loadExchangeRates();
   }
 
-  void _delReceipt(int id) =>
-      setState(() => _receipts.removeWhere((r) => r.id == id));
+  Future<void> _delReceipt(int id) async {
+    await DatabaseService.instance.deleteReceipt(id);
+    setState(() => _receipts.removeWhere((r) => r.id == id));
+  }
 
   void _switchTab(int i) async {
     if (i == _tab) return;
@@ -388,9 +390,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     _tabFadeCtrl.forward();
   }
 
-  void _addReceipt(Receipt r) => setState(() => _receipts.insert(0, r));
+  Future<void> _addReceipt(Receipt r) async {
+    await DatabaseService.instance.insertReceipt(r);
+    setState(() => _receipts.insert(0, r));
+  }
 
-  void _editReceipt(Receipt updated) {
+  Future<void> _editReceipt(Receipt updated) async {
+    await DatabaseService.instance.updateReceipt(updated);
     setState(() {
       final idx = _receipts.indexWhere((r) => r.id == updated.id);
       if (idx != -1) _receipts[idx] = updated;
