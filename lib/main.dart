@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'models/exchange_rate_model.dart';
@@ -317,12 +318,27 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
   Future<void> _loadReceipts() async {
     setState(() => _receiptsLoading = true);
-    if (mounted) {
+    try {
       final receipts = await DatabaseService.instance.getAllReceipts();
-      setState(() {
-        _receipts = receipts;
-        _receiptsLoading = false;
-      });
+      if (mounted) {
+        setState(() => _receipts = receipts);
+      }
+    } catch (e) {
+      // SQLite unavailable (e.g. Flutter Web) — fall back to seed data
+      if (mounted) {
+        try {
+          final imgBytes = await loadReceiptSvgBytes();
+          setState(() {
+            _receipts = buildSeedReceipts(imgBytes).map(Receipt.fromMap).toList();
+          });
+        } catch (_) {
+          setState(() {
+            _receipts = buildSeedReceipts(Uint8List(0)).map(Receipt.fromMap).toList();
+          });
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _receiptsLoading = false);
     }
   }
 

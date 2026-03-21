@@ -48,8 +48,12 @@ const String receiptSvgPath = 'assets/images/receipt.svg';
 
 Uint8List? _receiptSvgBytes;
 Future<Uint8List> loadReceiptSvgBytes() async {
-  _receiptSvgBytes ??= (await rootBundle.load(receiptSvgPath)).buffer.asUint8List();
-  return _receiptSvgBytes!;
+  try {
+    _receiptSvgBytes ??= (await rootBundle.load(receiptSvgPath)).buffer.asUint8List();
+    return _receiptSvgBytes!;
+  } catch (_) {
+    return Uint8List(0);
+  }
 }
 
 // Seed receipts — imageBytes loaded async via initSeedReceipts()

@@ -110,7 +110,7 @@ class ReceiptCard extends StatelessWidget {
                     ),
                   ),
                   // Show receipt image as small overlay (SVG or raster)
-                  if (receipt.imageBytes != null)
+                  if (receipt.imageBytes != null && receipt.imageBytes!.isNotEmpty)
                     Positioned(
                       right: 0, bottom: 0,
                       child: Container(

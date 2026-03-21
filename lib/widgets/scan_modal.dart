@@ -177,57 +177,7 @@ class _ScanModalState extends State<ScanModal>
     return prefix.trimLeft().startsWith('<');
   }
 
-  Future<void> _pickFromGallery() async {
-    try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-      if (!mounted) return;
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
-        setState(() {
-          _pickedXFile = picked;
-          _pickedBytes = bytes;
-          _pickedPath  = picked.path;
-        });
-        _goToForm();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not open gallery: $e'),
-        backgroundColor: Colors.red.shade700,
-      ));
-    }
-  }
 
-  Future<void> _pickFromCamera() async {
-    try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 85,
-      );
-      if (!mounted) return;
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
-        setState(() {
-          _pickedXFile = picked;
-          _pickedBytes = bytes;
-          _pickedPath  = picked.path;
-        });
-        _goToForm();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not open camera: $e'),
-        backgroundColor: Colors.red.shade700,
-      ));
-    }
-  }
 
   void _save() {
     // ── Validate ────────────────────────────────────────────────────────────
