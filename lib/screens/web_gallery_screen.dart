@@ -2,14 +2,17 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 // ── App palette ──────────────────────────────────────────────────────────────
+// Eto yung mga kulay na gagamitin natin para magmukhang vintage at malinis yung gallery.
 const _cerulean  = Color(0xFF2D728F);
 const _cream     = Color(0xFFFDF8EC);
 const _ink       = Color(0xFF0F2027);
 const _inkMid    = Color(0xFF2C4A55);
 const _inkLight  = Color(0xFF7A9BAA);
 
-const _green     = Color(0xFF4CAF50);
+const _green     = Color(0xFF4CAF50); // Primary accent color para sa gallery actions.
 
+// Model class para sa mga images na galing sa web/PC.
+// Kasi sa web, bytes (Uint8List) ang gamit natin imbes na file paths.
 class WebImageFile {
   final String name;
   final Uint8List bytes;
@@ -25,9 +28,10 @@ class WebGalleryScreen extends StatefulWidget {
 }
 
 class _WebGalleryScreenState extends State<WebGalleryScreen> {
-  int _tabIndex = 0; // 0 = Recent, 1 = Albums
-  WebImageFile? _selected;
+  int _tabIndex = 0; // 0 = Recent, 1 = Albums (Navigation state natin 'to).
+  WebImageFile? _selected; // Dito natin ise-save kung anong image ang pinindot ni user.
 
+  // Kapag pinindot yung 'Done', ibabalik natin yung bytes ng napiling picture sa previous screen.
   void _confirmSelection() {
     if (_selected != null) {
       Navigator.pop(context, _selected!.bytes);
@@ -42,13 +46,14 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
         child: Column(
           children: [
             // ── Top Bar matching the mockup ─────────────────────
+            // Header part na may back button at tab switcher.
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
               child: Row(
                 children: [
-                  // Back button (modeled after the green photo icon in mockup)
+                  // Back button (Yung green circle icon na nasa design mockup).
                   GestureDetector(
-                    onTap: () => Navigator.pop(context), // Let users cancel
+                    onTap: () => Navigator.pop(context), // Para makabalik kung ayaw na mag-select.
                     child: Container(
                       width: 44,
                       height: 44,
@@ -64,7 +69,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
                   ),
                   const SizedBox(width: 12),
                   
-                  // Tabs
+                  // Tabs para sa 'Recent' at 'Albums'.
                   Expanded(
                     child: Container(
                       height: 44,
@@ -84,6 +89,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
             const SizedBox(height: 8),
 
             // ── Grid Content ────────────────────────────────────
+            // Dito lalabas yung mga pictures. Kung wala pang laman, pakita muna yung empty state.
             Expanded(
               child: widget.files.isEmpty
                   ? _buildEmptyState()
@@ -93,6 +99,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
             ),
 
             // ── Bottom confirm bar (appears when selected) ──────
+            // Lalabas lang 'tong 'Done' button kapag may na-select nang picture.
             if (_selected != null)
               Container(
                 decoration: BoxDecoration(
@@ -107,6 +114,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
                 child: Row(
                   children: [
+                    // Display ng file name ng napiling picture.
                     Expanded(
                       child: Text(
                         _selected!.name,
@@ -116,6 +124,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
+                    // Done Button para i-finalize yung selection.
                     GestureDetector(
                       onTap: _confirmSelection,
                       child: Container(
@@ -142,11 +151,13 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
     );
   }
 
+  // Helper widget para sa pag-switch ng tabs.
   Widget _buildTab(String label, int index) {
     final isSelected = _tabIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _tabIndex = index),
-      child: Container(
+      child: AnimatedContainer( // Nilagyan natin ng konting transition para smooth yung selection.
+        duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           color: isSelected ? _green : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
@@ -166,6 +177,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
     );
   }
 
+  // Eto yung screen na makikita pag walang files na na-upload si user.
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -189,6 +201,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
     );
   }
 
+  // Mock layout lang muna para sa Albums tab, same grid pa rin ang gamit.
   Widget _buildAlbumsMock() {
     return Column(
       children: [
@@ -203,11 +216,12 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
     );
   }
 
+  // Main grid builder para sa mga images.
   Widget _buildGrid() {
     return GridView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+        crossAxisCount: 3, 
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -219,6 +233,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
         return GestureDetector(
           onTap: () {
             setState(() {
+              // Toggle logic: Pag kinlik ulit yung selected, made-deselect siya.
               _selected = isSelected ? null : file;
             });
           },
@@ -252,6 +267,7 @@ class _WebGalleryScreenState extends State<WebGalleryScreen> {
                     border: Border.all(color: _green, width: 3),
                   ),
                 ),
+              // Checkmark icon para clear na selected yung picture.
               if (isSelected)
                 const Positioned(
                   top: 8,
