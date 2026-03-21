@@ -37,12 +37,14 @@ class _GalleryScreenState extends State<GalleryScreen> {
   bool _loading = true;
   bool _permissionDenied = false;
 
+  // Check kung desktop platform ang gamit para sa logic ng picker
   bool get _isDesktop => 
       !kIsWeb && 
       (defaultTargetPlatform == TargetPlatform.windows || 
        defaultTargetPlatform == TargetPlatform.macOS || 
        defaultTargetPlatform == TargetPlatform.linux);
 
+  // Gamitin ang image_picker/html file picker kung Web o Desktop
   bool get _useCustomPicker => kIsWeb || _isDesktop;
 
   @override
@@ -51,8 +53,10 @@ class _GalleryScreenState extends State<GalleryScreen> {
     _loadPhotos();
   }
 
+  // Pangunahing logic para mag-load ng photos base sa platform
   Future<void> _loadPhotos() async {
     if (kIsWeb) {
+      // Logic para sa Web gamit ang dart:html
       final input = html.FileUploadInputElement()
         ..accept = 'image/*'
         ..multiple = true;
@@ -84,6 +88,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         });
       }
     } else if (_isDesktop) {
+      // Logic para sa Desktop gamit ang ImagePicker
       try {
         final picker = ImagePicker();
         final pickedFiles = await picker.pickMultiImage();
@@ -114,6 +119,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         }
       }
     } else {
+      // Logic para sa Mobile (Android/iOS) gamit ang PhotoManager
       final result = await PhotoManager.requestPermissionExtend();
       if (!mounted) return;
 
@@ -140,7 +146,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         final count = await recent.assetCountAsync;
         _assets = await recent.getAssetListRange(start: 0, end: count > 300 ? 300 : count);
         
-        // Also load all albums for the albums tab
+        // I-load ang lahat ng albums para sa albums tab
         _albums = await PhotoManager.getAssetPathList(
           type: RequestType.image,
           hasAll: true,
@@ -153,6 +159,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     }
   }
 
+  // Kapag pinindot ang confirm button, kukunin ang bytes ng napiling photo
   Future<void> _confirmSelection() async {
     if (_selectedIndex == null) return;
     
@@ -180,12 +187,12 @@ class _GalleryScreenState extends State<GalleryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _ink.withOpacity(0.4), // The area above the card
+      backgroundColor: _ink.withOpacity(0.4), // Overlay effect sa taas ng card
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // Extra spacing at top to push bottom sheet down slightly
+            // Konting spacing sa taas para lumitaw na bottom sheet style
             const SizedBox(height: 20),
             
             Expanded(
@@ -197,52 +204,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 child: Column(
                   children: [
                     // ── Card Top Header ──
-                    Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              // Cerulean square icon
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: _cerulean,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.photo, color: Colors.white, size: 28),
-                              ),
-                              const SizedBox(width: 12),
-                              
-                              // Tabs
-                              _tab('Recent', 0),
-                              const SizedBox(width: 12),
-                              _tab('Albums', 1),
-                            ],
-                          ),
-                        ),
-                        
-                        // Close button top-right
-                        Positioned(
-                          top: 16,
-                          right: 16,
-                          child: GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.close, size: 18, color: Colors.black54),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildHeader(),
                     
-                    // ── Content ──
+                    // ── Content Area ──
                     Expanded(
                       child: _permissionDenied
                           ? _buildPermissionDenied()
@@ -257,44 +221,64 @@ class _GalleryScreenState extends State<GalleryScreen> {
               ),
             ),
             
-            // ── Bottom Confirm Bar ──
+            // ── Bottom Confirm Bar (Lilitaw lang pag may pinili) ──
             if (_selectedIndex != null && !_loading)
-              Container(
-                color: _cream,
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  bottom: MediaQuery.of(context).padding.bottom + 16,
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _confirmSelection,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _cerulean,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text('Use Photo',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              _buildBottomConfirmBar(),
           ],
         ),
       ),
     );
   }
 
+  // Header UI na naglalaman ng icon at tabs
+  Widget _buildHeader() {
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              // Cerulean square icon sa kaliwa
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: _cerulean,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.photo, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 12),
+              
+              // Mga Tabs para sa Recent at Albums
+              _tab('Recent', 0),
+              const SizedBox(width: 12),
+              _tab('Albums', 1),
+            ],
+          ),
+        ),
+        
+        // Close button sa kanang bahagi sa taas
+        Positioned(
+          top: 16,
+          right: 16,
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 18, color: Colors.black54),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Tab widget helper
   Widget _tab(String label, int index) {
     final selected = _selectedTab == index;
     return GestureDetector(
@@ -321,6 +305,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
+  // Grid view para sa mga pictures (Recent o mula sa napiling album)
   Widget _buildGrid() {
     final count = _useCustomPicker ? _pickedBytes.length : _assets.length;
     
@@ -335,8 +320,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
       padding: EdgeInsets.zero,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        // MUST BE EXACTLY ZERO SPACING PURSUANT TO MOCKUP
-        crossAxisSpacing: 0,
+        crossAxisSpacing: 0, // Zero spacing para dikit-dikit
         mainAxisSpacing: 0,
       ),
       itemCount: count,
@@ -352,7 +336,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Image
+              // Image container based sa platform
               if (_useCustomPicker)
                 Image.memory(
                   _pickedBytes[i],
@@ -370,17 +354,15 @@ class _GalleryScreenState extends State<GalleryScreen> {
                   ),
                 ),
                 
-              // Overlay
-              if (isSelected)
-                Container(
-                  color: _cerulean.withOpacity(0.4),
-                ),
-              if (isSelected)
+              // Selection overlay at check icon
+              if (isSelected) ...[
+                Container(color: _cerulean.withOpacity(0.4)),
                 const Positioned(
                   top: 8,
                   right: 8,
                   child: Icon(Icons.check_circle, color: _sandy, size: 28),
                 ),
+              ],
             ],
           ),
         );
@@ -388,6 +370,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
+  // View para sa paglilista ng mga albums sa device
   Widget _buildAlbums() {
     if (_useCustomPicker) {
       return Column(
@@ -489,6 +472,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
+  // UI na lilitaw pag denied ang gallery permissions
   Widget _buildPermissionDenied() {
     return Center(
       child: Column(
@@ -505,6 +489,40 @@ class _GalleryScreenState extends State<GalleryScreen> {
             child: const Text('Open Settings', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+
+  // Floating confirm bar widget
+  Widget _buildBottomConfirmBar() {
+    return Container(
+      color: _cream,
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).padding.bottom + 16,
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton(
+          onPressed: _confirmSelection,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _cerulean,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 0,
+          ),
+          child: const Text('Use Photo',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }
