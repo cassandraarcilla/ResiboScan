@@ -4,6 +4,7 @@ import '../models/receipt_model.dart';
 import '../utils/constants.dart';
 
 // ── Vintage Hues Palette ─────────────────────────────────────────────────────
+// Custom color definitions for a consistent, professional dark-minimalist theme.
 const _cerulean    = Color(0xFF2D728F);
 const _cyan        = Color(0xFF3B8EA5);
 const _vanilla     = Color(0xFFF5EE9E);
@@ -16,10 +17,8 @@ const _inkMid      = Color(0xFF2C4A55);
 const _inkLight    = Color(0xFF7A9BAA);
 const _vanillaSoft = Color(0xFFFAF3C0);
 
-// ── SVG asset map — matches _receiptIcons order in scan_modal.dart ────────────
-//   1.svg = Grocery   2.svg = Dining    3.svg = Electronics  4.svg = Utilities
-//   5.svg = Education 6.svg = Health    7.svg = Clothing      8.svg = Others
-//   9.svg = Personal  10.svg = Work
+// ── SVG Asset Map ────────────────────────────────────────────────────────────
+// Maps specific expense categories to their respective SVG icons.
 const _imgBase = 'assets/images';
 const _catSvg = <String, String>{
   'Grocery'      : '$_imgBase/1.svg',
@@ -42,10 +41,13 @@ class ExpensesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // UI layout constants
     final topPad = MediaQuery.of(context).padding.top;
+    
+    // Logic: Calculate total spending across all receipts
     final total  = receipts.fold<double>(0, (s, r) => s + r.amount);
 
-    // Category breakdown
+    // Logic: Group receipts by category and calculate totals per category
     final byCat = categories.where((c) => c != 'All').map((c) {
       final list = receipts.where((r) => r.category == c).toList();
       return {
@@ -57,20 +59,24 @@ class ExpensesScreen extends StatelessWidget {
     }).where((c) => (c['count'] as int) > 0).toList()
       ..sort((a, b) => (b['amount'] as double).compareTo(a['amount'] as double));
 
-    // Monthly breakdown (last 3 months)
+    // Logic: Generate a monthly breakdown for the last 3 months
     final now = DateTime.now();
     final monthly = List.generate(3, (i) {
       final month = DateTime(now.year, now.month - i, 1);
       final sum   = receipts
           .where((r) {
-            final d = DateTime.parse(r.date);
-            return d.month == month.month && d.year == month.year;
+            try {
+              final d = DateTime.parse(r.date);
+              return d.month == month.month && d.year == month.year;
+            } catch (_) {
+              return false;
+            }
           })
           .fold<double>(0, (s, r) => s + r.amount);
       return {'label': _monthLabel(month), 'amount': sum};
     }).reversed.toList();
 
-    // Vintage category color palette
+    // Secondary color list for category variety
     final catColorList = [
       _cerulean,
       _sandy,
@@ -85,7 +91,8 @@ class ExpensesScreen extends StatelessWidget {
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ── HERO HEADER ──────────────────────────────────────────────
+          // ── HERO HEADER ──────────────────────────────────────────────────
+          // Features a modern gradient card displaying the overall financial overview.
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, topPad + 14, 16, 0),
@@ -110,6 +117,7 @@ class ExpensesScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(28),
                   child: Stack(
                     children: [
+                      // Decorative background circles
                       Positioned(
                         top: -60, right: -40,
                         child: Container(
@@ -138,20 +146,20 @@ class ExpensesScreen extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
+                                const Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Overview',
                                       style: TextStyle(
-                                        color: _vanilla.withOpacity(0.72),
+                                        color: Colors.white70,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.3,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    const Text(
+                                    SizedBox(height: 4),
+                                    Text(
                                       'Expense Summary',
                                       style: TextStyle(
                                         fontFamily: 'Georgia',
@@ -215,7 +223,8 @@ class ExpensesScreen extends StatelessWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
 
-                // ── MONTHLY TREND ──────────────────────────────────────
+                // ── MONTHLY TREND SECTION ──────────────────────────────────
+                // Visualizes spending over the current and previous months.
                 const _SectionLabel(
                   title: 'Monthly Trend',
                   icon: Icons.calendar_month_rounded,
@@ -263,7 +272,8 @@ class ExpensesScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // ── CATEGORY BREAKDOWN ──────────────────────────────────
+                // ── CATEGORY BREAKDOWN SECTION ─────────────────────────────
+                // Detailed breakdown showing spending per category with progress bars.
                 const _SectionLabel(
                   title: 'By Category',
                   icon: Icons.label_rounded,
@@ -306,6 +316,7 @@ class ExpensesScreen extends StatelessWidget {
     );
   }
 
+  // Helper for generating short month labels
   String _monthLabel(DateTime d) {
     const months = ['Jan','Feb','Mar','Apr','May','Jun',
                     'Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -313,9 +324,7 @@ class ExpensesScreen extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STAT TILE
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Supporting Widget: Stat Tile ─────────────────────────────────────────────
 class _StatTile extends StatelessWidget {
   final String label, value, sub;
   final Color  valueColor;
@@ -375,7 +384,7 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Supporting Widget: Section Label ─────────────────────────────────────────
 class _SectionLabel extends StatelessWidget {
   final String   title;
   final IconData icon;
@@ -408,7 +417,7 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Supporting Widget: Month Bar (Chart) ─────────────────────────────────────
 class _MonthBar extends StatelessWidget {
   final String label;
   final double amount, ratio;
@@ -468,9 +477,7 @@ class _MonthBar extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CATEGORY TILE — uses SVG circle image matching the receipt icon picker
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Supporting Widget: Category Tile ─────────────────────────────────────────
 class _CategoryTile extends StatelessWidget {
   final String svgAsset, cat;
   final double amount, pct;
@@ -506,7 +513,7 @@ class _CategoryTile extends StatelessWidget {
       child: Column(
         children: [
           Row(children: [
-            // SVG circle — same style as the icon picker in scan_modal
+            // Circular container for the SVG asset
             ClipOval(
               child: SvgPicture.asset(
                 svgAsset,
@@ -572,6 +579,7 @@ class _CategoryTile extends StatelessWidget {
             ),
           ]),
           const SizedBox(height: 12),
+          // Progress bar indicating the weight of this category against total spending
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: TweenAnimationBuilder<double>(
