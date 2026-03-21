@@ -319,26 +319,22 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   Future<void> _loadReceipts() async {
     setState(() => _receiptsLoading = true);
     try {
-      final receipts = await DatabaseService.instance.getAllReceipts();
+      final imgBytes = await loadReceiptSvgBytes();
       if (mounted) {
-        setState(() => _receipts = receipts);
+        setState(() {
+          _receipts = buildSeedReceipts(imgBytes).map(Receipt.fromMap).toList();
+        });
       }
-    } catch (e) {
-      // SQLite unavailable (e.g. Flutter Web) — fall back to seed data
+    } catch (_) {
       if (mounted) {
-        try {
-          final imgBytes = await loadReceiptSvgBytes();
-          setState(() {
-            _receipts = buildSeedReceipts(imgBytes).map(Receipt.fromMap).toList();
-          });
-        } catch (_) {
-          setState(() {
-            _receipts = buildSeedReceipts(Uint8List(0)).map(Receipt.fromMap).toList();
-          });
-        }
+        setState(() {
+          _receipts = buildSeedReceipts(Uint8List(0)).map(Receipt.fromMap).toList();
+        });
       }
     } finally {
-      if (mounted) setState(() => _receiptsLoading = false);
+      if (mounted) {
+        setState(() => _receiptsLoading = false);
+      }
     }
   }
 
