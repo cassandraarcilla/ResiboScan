@@ -1,12 +1,3 @@
-/// Typed model for the Open Exchange Rates API response.
-///
-/// JSON shape (https://open.er-api.com/v6/latest/PHP):
-/// {
-///   "result": "success",
-///   "base_code": "PHP",
-///   "time_last_update_utc": "Wed, 18 Mar 2026 00:02:31 +0000",
-///   "rates": { "USD": 0.0174, "EUR": 0.016, ... }
-/// }
 class ExchangeRate {
   final String result;
   final String baseCode;
@@ -20,41 +11,43 @@ class ExchangeRate {
     required this.rates,
   });
 
+  // Check kung success ang response galing sa API
   bool get isSuccess => result == 'success';
 
-  /// Returns the rate for [currency], or `null` if not found.
+  // Kukunin yung specific rate base sa currency code 
   double? rateFor(String currency) => rates[currency.toUpperCase()];
 
-  /// Convenience: convert [phpAmount] to [currency].
+  // Dito ginagawa yung conversion: PHP amount multiplied sa target rate
   double? convert(double phpAmount, String currency) {
     final r = rateFor(currency);
     return r == null ? null : phpAmount * r;
   }
 
-  // ── JSON parsing ──────────────────────────────────────────────────────────
+  // Factory para i-transform yung raw JSON data papuntang ExchangeRate object
   factory ExchangeRate.fromJson(Map<String, dynamic> json) {
-    // Safely coerce the nested "rates" map to Map<String, double>
+    // makes sures doubles values
     final rawRates = json['rates'] as Map<String, dynamic>? ?? {};
     final parsedRates = rawRates.map(
       (k, v) => MapEntry(k, (v as num).toDouble()),
     );
 
     return ExchangeRate(
-      result      : json['result']             as String? ?? '',
-      baseCode    : json['base_code']          as String? ?? 'PHP',
-      lastUpdated : json['time_last_update_utc'] as String? ?? '',
-      rates       : parsedRates,
+      result: json['result'] as String? ?? '',
+      baseCode: json['base_code'] as String? ?? 'PHP',
+      lastUpdated: json['time_last_update_utc'] as String? ?? '',
+      rates: parsedRates,
     );
   }
 
+  // use this pag kailangan isave ulit yung data as JSON format
   Map<String, dynamic> toJson() => {
-    'result'               : result,
-    'base_code'            : baseCode,
-    'time_last_update_utc' : lastUpdated,
-    'rates'                : rates,
-  };
+        'result': result,
+        'base_code': baseCode,
+        'time_last_update_utc': lastUpdated,
+        'rates': rates,
+      };
 
   @override
   String toString() =>
-      'ExchangeRate(base: $baseCode, rateCount: ${rates.length}, updated: $lastUpdated)';
+      'ExchangeRate(base: $baseCode, count: ${rates.length}, updated: $lastUpdated)';
 }
