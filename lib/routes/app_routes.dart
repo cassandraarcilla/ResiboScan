@@ -3,23 +3,16 @@ import '../main.dart' show MainApp;
 import '../screens/receipt_detail_screen.dart';
 import '../models/receipt_model.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ROUTE CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────────
+// ── ROUTE CONSTANTS — Milestone 1 ──────────────────────────────────────────
 class AppRoutes {
   AppRoutes._();
 
-  /// Main app shell (tabs + bottom nav)
+  // Dito nakadefine yung unique paths ng bawat screen
   static const String main          = '/main';
-
-  /// Receipt detail – pushed on top of the shell
   static const String receiptDetail = '/receipt-detail';
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ARGUMENT MODELS
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── ARGUMENT MODELS — Milestone 2 ──────────────────────────────────────────
 class ReceiptDetailArgs {
   final Receipt       receipt;
   final VoidCallback  onBack;
@@ -34,40 +27,34 @@ class ReceiptDetailArgs {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ROUTE FACTORY  (used by MaterialApp.onGenerateRoute)
-// ─────────────────────────────────────────────────────────────────────────────
+// ── ROUTE FACTORY — Milestone 3 ────────────────────────────────────────────
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
 
-    // ── Main shell ──────────────────────────────────────────────────────────
+    // Main Shell ng app (Home, Folders, etc.)
     case AppRoutes.main:
       return _fadeRoute(const MainApp(), settings);
 
-    // ── Receipt detail (slides in from the right) ────────────────────────
-    case AppRoutes.receiptDetail: {
+    // Kapag pinindot yung specific receipt, ito yung lalabas
+    case AppRoutes.receiptDetail:
       final args = settings.arguments as ReceiptDetailArgs;
       return _slideRoute(
         ReceiptDetailScreen(
-          receipt:  args.receipt,
-          onBack:   args.onBack,
+          receipt: args.receipt,
+          onBack: args.onBack,
           onDelete: args.onDelete,
-          onEdit:   args.onEdit,
         ),
         settings,
       );
-    }
 
-    // ── 404 fallback ────────────────────────────────────────────────────────
     default:
-      return _fadeRoute(const _NotFoundScreen(), settings);
+      return MaterialPageRoute(builder: (_) => const _NotFoundScreen());
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TRANSITION HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
+// ── TRANSITION HELPERS ──────────────────────────────────────────────────────
 
+// Fade effect para sa main navigation transitions
 PageRouteBuilder<dynamic> _fadeRoute(Widget page, RouteSettings settings) =>
     PageRouteBuilder(
       settings: settings,
@@ -77,6 +64,7 @@ PageRouteBuilder<dynamic> _fadeRoute(Widget page, RouteSettings settings) =>
       transitionDuration: const Duration(milliseconds: 250),
     );
 
+// Slide effect na galing sa gilid (parang native iOS feel)
 PageRouteBuilder<dynamic> _slideRoute(Widget page, RouteSettings settings) =>
     PageRouteBuilder(
       settings: settings,
@@ -91,9 +79,7 @@ PageRouteBuilder<dynamic> _slideRoute(Widget page, RouteSettings settings) =>
       transitionDuration: const Duration(milliseconds: 320),
     );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 404 SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
+// Fallback screen kapag may maling route name na tinawag
 class _NotFoundScreen extends StatelessWidget {
   const _NotFoundScreen();
 
