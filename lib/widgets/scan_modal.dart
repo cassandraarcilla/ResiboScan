@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../models/receipt_model.dart';
 import '../utils/constants.dart';
+import '../screens/camera_screen.dart';
+import '../screens/gallery_screen.dart';
 
 // ── Vintage Hues Palette ─────────────────────────────────────────────────────
 const _cerulean    = Color(0xFF2D728F);
@@ -102,71 +106,47 @@ class _ScanModalState extends State<ScanModal>
 
   Future<void> _pickFromCamera() async {
     try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.camera);
-      if (pickedFile == null) return;
-      
-      final bytes = await pickedFile.readAsBytes();
-      
-      setState(() {
-        _pickedXFile = pickedFile;
-        _pickedBytes = bytes;
-        _pickedPath  = pickedFile.path;
-      });
-      
-      try {
-        final result = await ApiService.scanReceiptOcr(bytes);
-        if (result['store'] != null && result['store'].toString().isNotEmpty) {
-          setState(() => _store = result['store'].toString());
-        }
-        if (result['amount'] != null && result['amount'].toString().isNotEmpty) {
-          setState(() => _amount = result['amount'].toString());
-        }
-        if (result['date'] != null && result['date'].toString().isNotEmpty) {
-          setState(() => _date = result['date'].toString());
-        }
-      } catch (e) {
-        // OCR failed, ignore
+      final bytes = await Navigator.push<Uint8List>(
+        context,
+        MaterialPageRoute(builder: (_) => const CameraScreen()),
+      );
+      if (!mounted) return;
+      if (bytes != null) {
+        setState(() {
+          _pickedBytes = bytes;
+          _pickedPath  = 'camera_capture.jpg';
+        });
+        _goToForm();
       }
-      
-      _goToForm();
     } catch (e) {
-      _goToForm();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not open camera: $e'),
+        backgroundColor: Colors.red.shade700,
+      ));
     }
   }
 
   Future<void> _pickFromGallery() async {
     try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile == null) return;
-      
-      final bytes = await pickedFile.readAsBytes();
-      
-      setState(() {
-        _pickedXFile = pickedFile;
-        _pickedBytes = bytes;
-        _pickedPath  = pickedFile.path;
-      });
-      
-      try {
-        final result = await ApiService.scanReceiptOcr(bytes);
-        if (result['store'] != null && result['store'].toString().isNotEmpty) {
-          setState(() => _store = result['store'].toString());
-        }
-        if (result['amount'] != null && result['amount'].toString().isNotEmpty) {
-          setState(() => _amount = result['amount'].toString());
-        }
-        if (result['date'] != null && result['date'].toString().isNotEmpty) {
-          setState(() => _date = result['date'].toString());
-        }
-      } catch (e) {
-        // OCR failed, ignore
+      final bytes = await Navigator.push<Uint8List>(
+        context,
+        MaterialPageRoute(builder: (_) => const GalleryScreen()),
+      );
+      if (!mounted) return;
+      if (bytes != null) {
+        setState(() {
+          _pickedBytes = bytes;
+          _pickedPath  = 'gallery_pick.jpg';
+        });
+        _goToForm();
       }
-      
-      _goToForm();
     } catch (e) {
-      _goToForm();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not open gallery: $e'),
+        backgroundColor: Colors.red.shade700,
+      ));
     }
   }
 
