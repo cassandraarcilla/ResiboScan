@@ -128,7 +128,7 @@ class _FoldersScreenState extends State<FoldersScreen>
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+                          padding: const EdgeInsets.fromLTRB(26, 28, 26, 30),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -141,41 +141,40 @@ class _FoldersScreenState extends State<FoldersScreen>
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Organized',
+                                        'Organized'.toUpperCase(),
                                         style: TextStyle(
-                                          color: _vanilla.withOpacity(0.72),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          letterSpacing: 0.3,
+                                          color: _vanilla.withOpacity(0.8),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1.5,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 6),
                                       const Text(
                                         'My Folders',
                                         style: TextStyle(
                                           fontFamily: 'Georgia',
                                           color: _white,
-                                          fontSize: 26,
+                                          fontSize: 30,
                                           fontWeight: FontWeight.w900,
-                                          letterSpacing: -0.5,
+                                          letterSpacing: -0.8,
                                         ),
                                       ),
                                     ],
                                   ),
                                   Container(
-                                    width: 50, height: 50,
+                                    width: 54, height: 54,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.13),
-                                      borderRadius:
-                                          BorderRadius.circular(16),
+                                      color: Colors.white.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(18),
                                       border: Border.all(
-                                        color: Colors.white.withOpacity(0.24),
-                                        width: 1.2,
+                                        color: Colors.white.withOpacity(0.25),
+                                        width: 1.5,
                                       ),
                                     ),
                                     child: const Center(
                                       child: Icon(
-                                        Icons.folder_open_rounded,
+                                        Icons.folder_copy_rounded,
                                         color: Colors.white,
                                         size: 26,
                                       ),
@@ -183,13 +182,20 @@ class _FoldersScreenState extends State<FoldersScreen>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 18),
-                              Text(
-                                '${widget.receipts.length} receipts across'
-                                ' ${folders.length - 1} folders',
-                                style: TextStyle(
-                                  color: _vanilla.withOpacity(0.65),
-                                  fontSize: 12.5,
+                              const SizedBox(height: 22),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${widget.receipts.length} total receipts across ${folders.length - 1} folders',
+                                  style: TextStyle(
+                                    color: _vanilla.withOpacity(0.9),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
@@ -207,7 +213,7 @@ class _FoldersScreenState extends State<FoldersScreen>
             // the tallest one (the active card), eliminating the gap.
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
+                padding: const EdgeInsets.fromLTRB(16, 26, 16, 0),
                 child: IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -216,12 +222,12 @@ class _FoldersScreenState extends State<FoldersScreen>
                       final isActive = _active == f;
                       return Expanded(
                         child: Padding(
-                          padding: EdgeInsets.only(right: isLast ? 0 : 10),
+                          padding: EdgeInsets.only(right: isLast ? 0 : 12),
                           child: _FolderTab(
                             label   : f,
-                            icon    : f == 'All'      ? Icons.shopping_cart_rounded
-                                    : f == 'Personal' ? Icons.home_rounded
-                                                      : Icons.work_rounded,
+                            icon    : f == 'All'      ? Icons.auto_awesome_motion_rounded
+                                    : f == 'Personal' ? Icons.person_rounded
+                                                      : Icons.business_center_rounded,
                             count   : _count(f),
                             total   : _total(f),
                             isActive: isActive,
@@ -238,47 +244,47 @@ class _FoldersScreenState extends State<FoldersScreen>
             // ── SECTION LABEL ─────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 14),
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(children: [
                       Container(
-                        width: 4, height: 20,
-                        margin: const EdgeInsets.only(right: 10),
+                        width: 5, height: 22,
+                        margin: const EdgeInsets.only(right: 12),
                         decoration: BoxDecoration(
                           color: _sandy,
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(3),
                         ),
                       ),
                       Text(
                         _active == 'All'
-                            ? 'All Receipts'
-                            : '$_active Folder',
+                            ? 'All Transactions'
+                            : '$_active Collection',
                         style: const TextStyle(
                           fontFamily: 'Georgia',
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
                           color: _ink,
-                          letterSpacing: -0.3,
+                          letterSpacing: -0.4,
                         ),
                       ),
                     ]),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 5),
+                        horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
                         color: _vanillaSoft,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _vanilla, width: 1.5),
+                        border: Border.all(color: _vanilla, width: 2),
                       ),
                       child: Text(
-                        '${_filtered.length} found',
+                        '${_filtered.length} items',
                         style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
                           color: _cerulean,
-                          letterSpacing: 0.2,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     ),
@@ -294,26 +300,29 @@ class _FoldersScreenState extends State<FoldersScreen>
                     child: _EmptyFolder(folder: _active),
                   )
                 : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (ctx, i) => TweenAnimationBuilder<double>(
                           tween: Tween(begin: 0.0, end: 1.0),
                           duration: Duration(
-                            milliseconds: 350 + i * 50),
-                          curve: Curves.easeOutCubic,
+                            milliseconds: 400 + i * 60),
+                          curve: Curves.easeOutQuart,
                           builder: (_, v, c) => Opacity(
                             opacity: v,
                             child: Transform.translate(
-                              offset: Offset(0, 14 * (1 - v)),
+                              offset: Offset(0, 20 * (1 - v)),
                               child: c,
                             ),
                           ),
-                          child: ReceiptCard(
-                            receipt:  _filtered[i],
-                            onTap:    () => widget.onView(_filtered[i]),
-                            onDelete: () =>
-                                widget.onDelete(_filtered[i].id),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: ReceiptCard(
+                              receipt:  _filtered[i],
+                              onTap:    () => widget.onView(_filtered[i]),
+                              onDelete: () =>
+                                  widget.onDelete(_filtered[i].id),
+                            ),
                           ),
                         ),
                         childCount: _filtered.length,
@@ -335,7 +344,7 @@ class _FoldersScreenState extends State<FoldersScreen>
 // so all three cards are always the same height.
 // ─────────────────────────────────────────────────────────────────────────────
 class _FolderTab extends StatefulWidget {
-  final String       label;
+  final String      label;
   final IconData     icon;
   final int          count;
   final double       total;
@@ -392,13 +401,10 @@ class _FolderTabState extends State<_FolderTab>
       onTapCancel: _cancel,
       child: ScaleTransition(
         scale: _scaleAnim,
-        // SizedBox.expand fills the IntrinsicHeight-constrained space
-        // so all cards are identical in height regardless of content.
         child: SizedBox.expand(
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOut,
-            // padding: vertical is handled by Column's mainAxisAlignment
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.fastOutSlowIn,
             decoration: BoxDecoration(
               gradient: active
                   ? const LinearGradient(
@@ -408,80 +414,82 @@ class _FolderTabState extends State<_FolderTab>
                     )
                   : null,
               color: active ? null : _white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(22),
               border: Border.all(
                 color: active
-                    ? Colors.transparent
-                    : _cerulean.withOpacity(0.14),
-                width: 1.5,
+                    ? Colors.white.withOpacity(0.2)
+                    : _cerulean.withOpacity(0.12),
+                width: 2,
               ),
               boxShadow: active
                   ? [
                       BoxShadow(
-                        color: _cerulean.withOpacity(0.34),
-                        blurRadius: 18,
-                        offset: const Offset(0, 7),
+                        color: _cerulean.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
                     ]
                   : [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: 4, vertical: 16),
+                horizontal: 8, vertical: 20),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.max, // fill expanded height
+                mainAxisSize: MainAxisSize.max,
                 children: [
 
                   // Icon — scales up when active, color flips with bg
                   AnimatedScale(
-                    scale: active ? 1.18 : 1.0,
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOut,
+                    scale: active ? 1.2 : 1.0,
+                    duration: const Duration(milliseconds: 280),
+                    curve: Curves.backOut,
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 200),
                       child: Icon(
                         widget.icon,
                         key: ValueKey(active),
-                        color: active ? Colors.white : Colors.black,
-                        size: 28,
+                        color: active ? Colors.white : _inkMid,
+                        size: 30,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 10),
 
                   // Label
                   AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 200),
                     style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      color: active ? _white : _inkMid,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      color: active ? _white : _ink,
+                      letterSpacing: -0.2,
                     ),
                     child: Text(
                       widget.label,
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
 
                   // Receipt count
                   AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 200),
                     style: TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
                       color: active
-                          ? _vanilla.withOpacity(0.72)
+                          ? _vanilla.withOpacity(0.75)
                           : _inkLight,
                     ),
                     child: Text(
-                      '${widget.count} receipt'
+                      '${widget.count} item'
                       '${widget.count != 1 ? "s" : ""}',
                       textAlign: TextAlign.center,
                     ),
@@ -489,12 +497,12 @@ class _FolderTabState extends State<_FolderTab>
 
                   // Total spend
                   if (widget.count > 0) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     AnimatedDefaultTextStyle(
                       duration: const Duration(milliseconds: 200),
                       style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
                         color: active ? _vanilla : _sandy,
                       ),
                       child: Text(
@@ -505,15 +513,15 @@ class _FolderTabState extends State<_FolderTab>
                   ],
 
                   // Active indicator pill
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOut,
-                    width : active ? 20 : 0,
-                    height: active ? 3  : 0,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutBack,
+                    width : active ? 24 : 0,
+                    height: active ? 4  : 0,
                     decoration: BoxDecoration(
-                      color: _vanilla.withOpacity(0.55),
-                      borderRadius: BorderRadius.circular(4),
+                      color: _vanilla.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ],
@@ -540,43 +548,45 @@ class _EmptyFolder extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 78, height: 78,
+            width: 86, height: 86,
             decoration: BoxDecoration(
               color: _vanillaSoft,
               shape: BoxShape.circle,
               border: Border.all(
-                color: _sandy.withOpacity(0.30), width: 1.5),
+                color: _sandy.withOpacity(0.35), width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: _vanilla.withOpacity(0.6),
-                  blurRadius: 22,
-                  spreadRadius: 4,
+                  color: _vanilla.withOpacity(0.5),
+                  blurRadius: 30,
+                  spreadRadius: 6,
                 ),
               ],
             ),
             child: const Center(
               child: Icon(
                 Icons.folder_open_rounded,
-                color: Colors.black,
-                size: 32,
+                color: _inkMid,
+                size: 38,
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
-            'No receipts in $folder',
+            'Nothing in $folder',
             style: const TextStyle(
               fontFamily: 'Georgia',
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: _inkMid,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: _ink,
             )),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
-            'Add a receipt and assign it to this folder',
+            'Start scanning to fill this folder up',
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12.5,
-              color: _inkLight.withOpacity(0.8),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: _inkLight.withOpacity(0.9),
             ),
           ),
         ],
