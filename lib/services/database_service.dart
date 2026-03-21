@@ -6,13 +6,15 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart' as sqflite;
 
-// Conditional import: on web uses dart:html localStorage, on others is a stub
+
 import 'web_storage_stub.dart'
     if (dart.library.html) 'web_storage.dart';
 
 import '../models/receipt_model.dart';
 import '../utils/constants.dart';
 
+/// [DatabaseService] - Ang namamahala sa persistence ng ating data.
+/// Hybrid ito: SQLite (sqflite) ang gamit sa Mobile, at LocalStorage naman sa Web.
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   DatabaseService._init();
@@ -43,7 +45,6 @@ class DatabaseService {
   }
 
   // ─── Web: localStorage ────────────────────────────────────────────────────
-
   List<Map<String, dynamic>> _webReadRaw() {
     try {
       final raw = localStorageGet(_webKey);
@@ -56,12 +57,14 @@ class DatabaseService {
     }
   }
 
+  /// Sine-save yung buong listahan pabalik sa browser storage.
   void _webWriteRaw(List<Map<String, dynamic>> list) {
     try {
       localStorageSet(_webKey, jsonEncode(list));
     } catch (_) {}
   }
 
+  /// Kinukuha lahat ng receipts. Kapag first time at walang laman
   List<Receipt> _webGetAll() {
     var raw = _webReadRaw();
     if (raw.isEmpty) {
@@ -99,7 +102,6 @@ class DatabaseService {
   }
 
   // ─── Serialization helpers ─────────────────────────────────────────────────
-
   Map<String, dynamic> _receiptToStorable(Receipt r) => {
     'id'      : r.id,
     'store'   : r.store,
@@ -114,7 +116,6 @@ class DatabaseService {
                   ? base64Encode(r.imageBytes!)
                   : null,
   };
-
   Map<String, dynamic> _seedToStorable(Map<String, dynamic> m) => {
     'id'      : m['id'],
     'store'   : m['store'],
@@ -151,13 +152,13 @@ class DatabaseService {
   }
 
   // ─── Mobile: sqflite ──────────────────────────────────────────────────────
-
   Future<sqflite.Database> get _database async {
     if (_db != null) return _db!;
     _db = await _initDB();
     return _db!;
   }
 
+  /// Initializer ng DB. Dito ginagawa yung table structure.
   Future<sqflite.Database> _initDB() async {
     final dbPath = await sqflite.getDatabasesPath();
     final path   = p.join(dbPath, 'resiboscan.db');
@@ -165,6 +166,7 @@ class DatabaseService {
       path,
       version: 1,
       onCreate: (db, _) async {
+        // Table schema definition.
         await db.execute('''
           CREATE TABLE receipts (
             id INTEGER PRIMARY KEY, store TEXT NOT NULL,
@@ -174,6 +176,8 @@ class DatabaseService {
             notes TEXT NOT NULL DEFAULT '', image_bytes BLOB
           )
         ''');
+        
+        // Pag-load ng initial sample data pagka-install ng app.
         final imgBytes = await loadReceiptSvgBytes();
         for (final r in buildSeedReceipts(imgBytes)) {
           await db.insert('receipts', {
