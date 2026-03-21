@@ -12,6 +12,8 @@ import 'widgets/bottom_nav.dart';
 import 'widgets/scan_modal.dart';
 import 'services/database_service.dart';
 
+// ── App Colors ──────────────────────────────────────────────────────────────
+// Eto yung primary colors na ginamit natin sa buong app para sa branding.
 const _cerulean = Color(0xFF2D728F);
 const _cyan     = Color(0xFF3B8EA5);
 const _vanilla  = Color(0xFFF5EE9E);
@@ -20,13 +22,17 @@ const _cream    = Color(0xFFFDF8EC);
 const _white    = Color(0xFFFFFFFF);
 
 void main() async {
+  // Siguraduhin na initialized ang Flutter engine bago mag-setup ng DB o system UI.
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Setup para sa transparent status bar para maging seamless yung look ng UI natin.
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
     systemNavigationBarColor: _white,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
+  
   runApp(const ResiboScanApp());
 }
 
@@ -37,20 +43,21 @@ class ResiboScanApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ResiboScan',
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false, // Tinatanggal yung debug banner sa top right.
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: _cerulean),
         scaffoldBackgroundColor: _cream,
         useMaterial3: true,
-        fontFamily: 'Roboto',
+        fontFamily: 'Roboto', // Default font natin para malinis basahin.
       ),
-      home: const SplashScreen(),
-      onGenerateRoute: generateRoute,
+      home: const SplashScreen(), // Ang unang screen na lalabas pagka-open ng app.
+      onGenerateRoute: generateRoute, // Routing system para sa transitions between screens.
     );
   }
 }
 
-// ── Splash ────────────────────────────────────────────────────────────────────
+// ── Splash Screen ────────────────────────────────────────────────────────────
+// Dito handle yung initial loading animation at pag-prepare ng resources.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
   @override
@@ -59,7 +66,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  double _progress = 0;
+  double _progress = 0; // State para sa custom loading bar natin.
 
   late final AnimationController _fadeCtrl;
   late final AnimationController _scaleCtrl;
@@ -71,11 +78,16 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    // Fade animation para sa unti-unting paglabas ng logo at text.
     _fadeCtrl  = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
     _fadeAnim  = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    
+    // Scale animation (elastic look) para sa logo para maging bouncy yung feel.
     _scaleCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _scaleAnim = Tween<double>(begin: 0.7, end: 1.0)
         .animate(CurvedAnimation(parent: _scaleCtrl, curve: Curves.elasticOut));
+    
+    // Floating animation: pabalik-balik na galaw (up and down) ng logo.
     _floatCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 2200))
       ..repeat(reverse: true);
     _floatAnim = Tween<double>(begin: -6, end: 6)
@@ -94,12 +106,14 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  // Timer simulation para sa loading bar bago pumunta sa main dashboard.
   void _startLoading() async {
     for (int i = 0; i <= 100; i += 3) {
       await Future.delayed(const Duration(milliseconds: 38));
       if (mounted) setState(() => _progress = i.toDouble());
     }
     await Future.delayed(const Duration(milliseconds: 300));
+    // Pag tapos na ang loading, lilipat na sa Main Dashboard.
     if (mounted) Navigator.pushReplacementNamed(context, AppRoutes.main);
   }
 
@@ -115,6 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
             stops: [0.0, 0.45, 1.0],
             colors: [Color(0xFF0F3547), _cerulean, _cyan])),
         child: Stack(children: [
+          // Background design elements (Mga circles sa gilid).
           Positioned(top: -size.width * 0.3, right: -size.width * 0.2,
             child: Container(width: size.width * 0.75, height: size.width * 0.75,
               decoration: BoxDecoration(shape: BoxShape.circle,
@@ -123,10 +138,12 @@ class _SplashScreenState extends State<SplashScreen>
             child: Container(width: size.width * 0.65, height: size.width * 0.65,
               decoration: BoxDecoration(shape: BoxShape.circle,
                 color: _vanilla.withOpacity(0.06)))),
+          
           FadeTransition(
             opacity: _fadeAnim,
             child: Center(
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                // Container ng logo na may floating at scaling animation.
                 AnimatedBuilder(
                   animation: _floatAnim,
                   builder: (_, child) => Transform.translate(
@@ -149,6 +166,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 28),
+                // App Name with RichText para sa styling ng 'Resibo' at 'Scan'.
                 ScaleTransition(
                   scale: _scaleAnim,
                   child: RichText(
@@ -166,6 +184,8 @@ class _SplashScreenState extends State<SplashScreen>
                   style: TextStyle(color: _vanilla.withOpacity(0.60),
                     fontSize: 13.5, fontWeight: FontWeight.w400, letterSpacing: 0.3)),
                 const SizedBox(height: 52),
+                
+                // Custom Loading Bar at Labels.
                 SizedBox(
                   width: 220,
                   child: Column(children: [
@@ -196,6 +216,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
+  // Label swticher para sa loading stages natin.
   String _label(double p) {
     if (p < 30) return 'Starting up...';
     if (p < 60) return 'Loading data...';
@@ -205,6 +226,7 @@ class _SplashScreenState extends State<SplashScreen>
 }
 
 // ── Main App Shell ────────────────────────────────────────────────────────────
+// Eto yung pinaka-pundasyon ng dashboard na nagha-handle ng Tab switching at Data Syncing.
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
   @override
@@ -212,9 +234,9 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
-  int _tab = 0;
-  List<Receipt> _receipts = [];
-  bool _loading = true;
+  int _tab = 0; // Current index ng Bottom Navigation Bar.
+  List<Receipt> _receipts = []; // Central state para sa lahat ng receipts.
+  bool _loading = true; // State tracker para sa database initialization.
 
   ExchangeRate? _exchangeRate;
   bool _rateLoading = true;
@@ -226,11 +248,13 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // Animation para sa smooth transition kapag nag-lilipat ng tabs.
     _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 250))
       ..value = 1.0;
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    _loadReceipts();
-    _loadRates();
+    
+    _loadReceipts(); // Kunin yung receipts mula sa local DB.
+    _loadRates();    // Kunin yung current exchange rates galing sa API.
   }
 
   @override
@@ -238,6 +262,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
   // ── Data loading ──────────────────────────────────────────────────────────
 
+  /// Nagfe-fetch ng data mula sa DatabaseService.
   Future<void> _loadReceipts() async {
     if (mounted) setState(() => _loading = true);
     try {
@@ -248,6 +273,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     }
   }
 
+  /// Nagfe-fetch ng external exchange rates gamit ang ApiService.
   Future<void> _loadRates() async {
     if (mounted) setState(() { _rateLoading = true; _rateError = null; });
     try {
@@ -260,11 +286,11 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     }
   }
 
-  // ── CRUD ──────────────────────────────────────────────────────────────────
+  // ── CRUD Actions ──────────────────────────────────────────────────────────
 
   Future<void> _addReceipt(Receipt r) async {
     await DatabaseService.instance.insertReceipt(r);
-    if (mounted) setState(() => _receipts.insert(0, r));
+    if (mounted) setState(() => _receipts.insert(0, r)); 
   }
 
   Future<void> _editReceipt(Receipt updated) async {
@@ -280,8 +306,9 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     if (mounted) setState(() => _receipts.removeWhere((r) => r.id == id));
   }
 
-  // ── Navigation ────────────────────────────────────────────────────────────
+  // ── Navigation & Modals ───────────────────────────────────────────────────
 
+  /// Para sa smooth switching ng bottom tabs.
   void _switchTab(int i) async {
     if (i == _tab) return;
     await _fadeCtrl.reverse();
@@ -311,6 +338,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     );
   }
 
+  /// Lilipat sa Detail Screen ng isang partikular na resibo.
   void _viewReceipt(Receipt r) {
     Navigator.pushNamed(
       context,
@@ -323,7 +351,6 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
           Navigator.pop(context);
         },
         onEdit: (receipt) {
-          // Close detail, open edit modal
           Navigator.pop(context);
           _openScanModal(existing: receipt);
         },
@@ -331,7 +358,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     );
   }
 
-  // ── Simulation toggles ────────────────────────────────────────────────────
+  // ── Simulation toggles (Para sa testing purposes) ──────────────────────────
 
   void _toggleError() {
     setState(() {
@@ -358,6 +385,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       statusBarIconBrightness: Brightness.light,
     ));
 
+    // Loading screen habang hinihintay yung database results.
     if (_loading) {
       return Scaffold(
         backgroundColor: _cream,
@@ -375,6 +403,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       );
     }
 
+    // Listahan ng ating mga core screens sa dashboard.
     final screens = [
       HomeScreen(
         receipts      : _receipts,
