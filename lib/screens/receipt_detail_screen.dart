@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/receipt_model.dart';
+import '../services/csv_download_stub.dart'
+    if (dart.library.html) '../services/csv_download_web.dart';
 
 bool _isSvg(Uint8List bytes) {
   if (bytes.length < 5) return false;
@@ -32,7 +32,6 @@ Widget _iconFallback(double size, Color color) => Container(
   ),
   child: Icon(Icons.receipt_rounded, size: size * 0.4, color: color.withOpacity(0.5)),
 );
-
 
 // ── Vintage Hues Palette ─────────────────────────────────────────────────────
 const _cerulean    = Color(0xFF2D728F);
@@ -179,14 +178,12 @@ class ReceiptDetailScreen extends StatelessWidget {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  // Category pill — text only
                                   _HeaderPill(
                                     label: receipt.category,
                                     bgColor: Colors.white.withOpacity(0.14),
                                     textColor: _vanilla,
                                   ),
                                   const SizedBox(height: 5),
-                                  // Folder pill — real icon replaces 📁
                                   _HeaderPillWithIcon(
                                     icon: Icons.folder_rounded,
                                     label: receipt.folder,
@@ -322,7 +319,7 @@ class ReceiptDetailScreen extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CSV EXPORT — triggers a browser download
+// CSV EXPORT — cross-platform (web uses anchor trick, mobile uses share/snackbar)
 // ─────────────────────────────────────────────────────────────────────────────
 void _exportCsv(BuildContext context, Receipt r) {
   try {
@@ -336,23 +333,14 @@ void _exportCsv(BuildContext context, Receipt r) {
       ['Notes',    r.notes.isEmpty ? '—' : r.notes],
       ['Warranty', r.warranty ?? '—'],
     ];
-
     final csv = rows.map((row) =>
       row.map((cell) => '"${cell.replaceAll('"', '""')}"').join(',')
     ).join('\n');
-
-    final bytes  = utf8.encode(csv);
-    final blob   = html.Blob([bytes], 'text/csv');
-    final url    = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', '${r.store.replaceAll(' ', '_')}_receipt.csv')
-      ..click();
-    html.Url.revokeObjectUrl(url);
-
+    downloadCsv(csv, '${r.store.replaceAll(' ', '_')}_receipt.csv');
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Exported ${r.store} receipt as CSV'),
-        backgroundColor: const Color(0xFF2D728F),
+      const SnackBar(
+        content: Text('Receipt exported as CSV'),
+        backgroundColor: Color(0xFF2D728F),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -372,7 +360,7 @@ class _ReceiptImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasPhoto = receipt.imageBytes != null;
+    final bool hasPhoto = receipt.imageBytes != null && receipt.imageBytes!.isNotEmpty;
 
     return GestureDetector(
       onTap: hasPhoto
@@ -530,7 +518,7 @@ class _ReceiptImageCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Full-screen zoom viewer — uses Dialog to avoid route freeze on web
+// Full-screen zoom viewer
 // ─────────────────────────────────────────────────────────────────────────────
 class _ZoomViewer {
   static void show(BuildContext context, Uint8List bytes) {
@@ -547,7 +535,6 @@ class _ZoomViewer {
           height: size.height,
           child: Stack(
             children: [
-              // ── Zoomable image (SVG or raster) ──────────────────
               Positioned.fill(
                 child: InteractiveViewer(
                   minScale: 0.5,
@@ -559,7 +546,6 @@ class _ZoomViewer {
                   ),
                 ),
               ),
-              // ── Close button ────────────────────────────────────
               Positioned(
                 top: MediaQuery.of(context).padding.top + 12,
                 right: 16,
@@ -578,7 +564,6 @@ class _ZoomViewer {
                   ),
                 ),
               ),
-              // ── Hint ────────────────────────────────────────────
               Positioned(
                 bottom: 30, left: 0, right: 0,
                 child: Center(
@@ -621,9 +606,6 @@ class _HeaderPill extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Icon + text pill — replaces the 📁 folder emoji pill
-// ─────────────────────────────────────────────────────────────────────────────
 class _HeaderPillWithIcon extends StatelessWidget {
   final IconData icon;
   final String   label;
@@ -654,9 +636,6 @@ class _HeaderPillWithIcon extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Warranty banner — real icons replace ⚠️ 🔴 ✅
-// ─────────────────────────────────────────────────────────────────────────────
 class _WarrantyBanner extends StatelessWidget {
   final String warrantyDate;
   final int?   days;
@@ -677,8 +656,8 @@ class _WarrantyBanner extends StatelessWidget {
     final IconData icon = isExpired
         ? Icons.warning_rounded
         : isCritical
-            ? Icons.circle          // red dot = critical
-            : Icons.check_circle_rounded; // green check = healthy
+            ? Icons.circle
+            : Icons.check_circle_rounded;
 
     final String title = isExpired
         ? 'Warranty Expired'
@@ -726,7 +705,6 @@ class _WarrantyBanner extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 class _DetailRow extends StatelessWidget {
   final String label, value;
   final bool   isLast;
@@ -768,7 +746,6 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 class _ActionButton extends StatelessWidget {
   final IconData     icon;
   final String       label;
@@ -810,7 +787,6 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 class _DeleteButton extends StatelessWidget {
   final VoidCallback onTap;
   const _DeleteButton({required this.onTap});

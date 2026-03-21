@@ -15,8 +15,9 @@ const Color cBorder    = Color(0xFFE5E0D8);
 
 // Categories
 const List<String> categories = [
-  'All', 'Groceries', 'Food & Dining',
-  'Electronics', 'Utilities', 'Education', 'Others'
+  'All', 'Grocery', 'Dining',
+  'Electronics', 'Utilities', 'Education',
+  'Health', 'Clothing', 'Personal', 'Work', 'Others'
 ];
 
 // Folders
@@ -24,22 +25,34 @@ const List<String> folders = ['All', 'Personal', 'Work'];
 
 // Category colors
 const Map<String, Color> catColors = {
+  'Grocery'      : Color(0xFF52B788),
   'Groceries'    : Color(0xFF52B788),
+  'Dining'       : Color(0xFFF4A261),
   'Food & Dining': Color(0xFFF4A261),
   'Electronics'  : Color(0xFF457B9D),
   'Utilities'    : Color(0xFFE9C46A),
   'Education'    : Color(0xFFA8DADC),
+  'Health'       : Color(0xFFE76F51),
+  'Clothing'     : Color(0xFFCDB4DB),
+  'Personal'     : Color(0xFF81B29A),
+  'Work'         : Color(0xFF3D405B),
   'Others'       : Color(0xFFCDB4DB),
 };
 
 // Category icons (Material Icons, black)
 const Map<String, IconData> catIcons = {
   'All'          : Icons.grid_view_rounded,
+  'Grocery'      : Icons.shopping_cart_rounded,
   'Groceries'    : Icons.shopping_cart_rounded,
+  'Dining'       : Icons.restaurant_rounded,
   'Food & Dining': Icons.restaurant_rounded,
   'Electronics'  : Icons.devices_rounded,
   'Utilities'    : Icons.bolt_rounded,
   'Education'    : Icons.menu_book_rounded,
+  'Health'       : Icons.local_hospital_rounded,
+  'Clothing'     : Icons.checkroom_rounded,
+  'Personal'     : Icons.person_rounded,
+  'Work'         : Icons.work_rounded,
   'Others'       : Icons.category_rounded,
 };
 
