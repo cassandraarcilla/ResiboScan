@@ -8,6 +8,11 @@
 ### Holy Angel University — School of Computing | Group 8 | S.Y. 2025-2026
 
 ---
+## **Introduction**
+
+ResiboScan is a mobile application designed to help users easily scan, store, and manage their receipts digitally. It eliminates the need for physical receipt storage by allowing users to organize receipts into categories, track expenses, and access important information such as warranties and purchase history. The app focuses on simplicity, efficiency, and user-friendly design, making it a practical everyday tool for managing financial records.
+
+---
 
 ## **How to Run**
 
@@ -58,8 +63,19 @@ flutter run
 * Error handling using try/catch with error message UI
 
 ---
+### **Milestone 4**
 
-## **Team — Group 8**
+* Display API data using ListView and Card widgets
+* Improved UI design (consistent spacing, typography, color theme)
+* Standardized card layouts across all screens
+* Completed app navigation and user flow
+* Final testing and bug fixing
+* Final app build preparation (project/APK)
+* Complete documentation and screenshots
+
+---
+
+## **Group 8**
 
 | Name              | Role                             |
 | ----------------- | -------------------------------- |
