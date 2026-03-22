@@ -408,7 +408,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         return FutureBuilder<List<AssetEntity>>(
           future: album.getAssetListRange(start: 0, end: 1),
           builder: (context, snapshot) {
-            final asset = snapshot.data?.firstOrNull;
+            final asset = snapshot.data != null && snapshot.data!.isNotEmpty ? snapshot.data!.first : null;
             
             return GestureDetector(
               onTap: () async {

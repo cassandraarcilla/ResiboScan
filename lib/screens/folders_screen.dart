@@ -449,7 +449,7 @@ class _FolderTabState extends State<_FolderTab>
                   AnimatedScale(
                     scale: active ? 1.2 : 1.0,
                     duration: const Duration(milliseconds: 280),
-                    curve: Curves.backOut,
+                    curve: Curves.easeOutBack,
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 200),
                       child: Icon(

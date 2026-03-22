@@ -57,6 +57,13 @@ class Receipt {
     return exp.difference(DateTime.now()).inDays;
   }
 
+  /// Alias used across screens — returns null when no warranty is set,
+  /// otherwise returns the number of days until (or since) expiry.
+  int? get daysToWarranty {
+    if (!hasWarranty) return null;
+    return daysUntilExpiry;
+  }
+
   // Adds Peso sign and commas sa amount
   String get formattedAmount =>
       '₱${amount.toStringAsFixed(2).replaceAllMapped(

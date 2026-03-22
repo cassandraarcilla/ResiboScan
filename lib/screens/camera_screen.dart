@@ -244,7 +244,7 @@ class _CameraScreenState extends State<CameraScreen> with WidgetsBindingObserver
             children: [
               _circleButton(
                 icon: _capturedBytes == null ? Icons.flip_camera_ios_outlined : Icons.replay_rounded,
-                onTap: _capturedBytes == null ? (_cameras.length > 1 ? _flipCamera : null) : _retakePhoto,
+                onTap: _capturedBytes == null ? (_cameras.length > 1 ? () => _flipCamera() : null) : _retakePhoto,
                 size: 44,
                 outlined: true,
               ),

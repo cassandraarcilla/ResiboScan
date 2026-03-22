@@ -218,7 +218,8 @@ class AlertsScreen extends StatelessWidget {
 
 class _SummaryPill extends StatelessWidget {
   final IconData icon;
-  final Color iconColor, label, color, textColor;
+  final Color iconColor, color, textColor;
+  final String label;
   const _SummaryPill({required this.icon, required this.iconColor, required this.label, required this.color, required this.textColor});
 
   @override
@@ -232,7 +233,7 @@ class _SummaryPill extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 14, color: iconColor),
         const SizedBox(width: 6),
-        Text(label as String, style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.bold)),
       ]),
     );
   }

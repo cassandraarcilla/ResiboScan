@@ -43,6 +43,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           receipt: args.receipt,
           onBack: args.onBack,
           onDelete: args.onDelete,
+          onEdit: args.onEdit,
         ),
         settings,
       );
